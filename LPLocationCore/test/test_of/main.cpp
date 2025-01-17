@@ -1,49 +1,27 @@
 #include <Arduino.h>
-#include <SPI.h>
+#include <spi_bitbang_3wire.h>
 
 const int CS_PIN = 40; // Chip Select pin
 const int SCK_PIN = 41; // Serial Clock pin
 const int DIO_PIN = 42; // Data I/O pin
 const int RST_PIN = 39; // Reset pin
 
+SPIBitBang3Wire spi;
+
 void setup() {
     Serial.begin(115200); // Initialize serial communication
     delay(2000); // Wait for the serial monitor to open
 
-    // Initialize SPI
-    SPI.begin(SCK_PIN, 255, DIO_PIN); // Initialize SPI with custom SCK pin
-    SPI.setClockDivider(SPI_CLOCK_DIV16); // Set SPI clock speed
-    pinMode(CS_PIN, OUTPUT);
-    // pinMode(SCK_PIN, OUTPUT);
-    // pinMode(DIO_PIN, OUTPUT);
-    SPI.setDataMode(SPI_MODE3); // Set SPI mode
-    // SPI.setBitOrder(MSBFIRST); // Set bit order
+    Serial.println("Starting SPI communication...");
+    spi.begin(SCK_PIN, DIO_PIN, CS_PIN, RST_PIN); // Initialize the SPI communication
+    spi.reset(); // Reset the device
 
-    // Initialize Chip Select pin
-    digitalWrite(CS_PIN, HIGH); // Set CS pin high to start with
-
-    pinMode(RST_PIN, OUTPUT); // Set reset pin to output mode
-    digitalWrite(RST_PIN, LOW); // Set reset pin low
-    delay(5);
-    digitalWrite(RST_PIN, HIGH); // Set reset pin high
-    delay(5);
-}
-
-uint8_t readRegister(uint8_t reg) {
-    digitalWrite(CS_PIN, LOW); // Select the device by setting CS low
-    pinMode(DIO_PIN, INPUT); // Set DIO pin to input mode to read data
-    SPI.beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE3)); // Begin SPI transaction
-    SPI.transfer(reg); // Send the register address
-    uint8_t value = SPI.transfer(0x00); // Read the register value
-    pinMode(DIO_PIN, OUTPUT); // Set DIO pin back to output mode
-    digitalWrite(CS_PIN, HIGH); // Deselect the device by setting CS high
-    return value;
 }
 
 void loop() {
-    uint8_t reg0 = readRegister(0x00);
-    uint8_t reg1 = readRegister(0x01);
-    uint8_t reg2 = readRegister(0x02);
+    uint8_t reg0 = spi.read(0x00);
+    uint8_t reg1 = spi.read(0x01);
+    uint8_t reg2 = spi.read(0x02);
 
     // Print the register values to the serial monitor
     Serial.print("Register 0x00: ");

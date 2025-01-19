@@ -1,0 +1,5 @@
+For single tesing:
+IMU:
+pio test --filter test_imu -vvv
+Steppers:
+pio test --filter test_stepper -vvv

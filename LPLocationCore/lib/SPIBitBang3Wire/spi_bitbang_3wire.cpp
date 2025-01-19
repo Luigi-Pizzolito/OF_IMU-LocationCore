@@ -1,12 +1,11 @@
 #include "spi_bitbang_3wire.h"
 
-#define BASE_DELAY 5000 // Base delay in microseconds
-
-void SPIBitBang3Wire::begin(int sckPin, int mosiMisoPin, int csPin, int resetPin) {
+void SPIBitBang3Wire::begin(int sckPin, int mosiMisoPin, int csPin, int resetPin, uint32_t spiSpeedDelayUs) {
     _sckPin = sckPin;
     _mosiMisoPin = mosiMisoPin;
     _csPin = csPin;
     _resetPin = resetPin;
+    _spiSpeedDelayUs = spiSpeedDelayUs;
     setPinModes();
 }
 
@@ -22,19 +21,20 @@ void SPIBitBang3Wire::setPinModes() {
 
 void SPIBitBang3Wire::select() {
     digitalWrite(_csPin, LOW); // Select
-    delayMicroseconds(BASE_DELAY*10);
+    delayMicroseconds(_spiSpeedDelayUs*10);
 }
 
 void SPIBitBang3Wire::deselect() {
     digitalWrite(_csPin, HIGH); // Deselect
     digitalWrite(_sckPin, HIGH); // Clock high
-    delayMicroseconds(BASE_DELAY*10);
+    delayMicroseconds(_spiSpeedDelayUs*10);
 }
 
 void SPIBitBang3Wire::reset() {
     digitalWrite(_resetPin, LOW); // Activate reset
-    delay(10); // Hold reset for 10ms
+    delay(1); // Hold reset for 1ms
     digitalWrite(_resetPin, HIGH); // Deactivate reset
+    delay(10); // Wait for reset to complete
 }
 
 void SPIBitBang3Wire::write(uint8_t address, uint8_t data) {
@@ -45,19 +45,19 @@ void SPIBitBang3Wire::write(uint8_t address, uint8_t data) {
     for (int i = 0; i < 8; i++) {
         digitalWrite(_mosiMisoPin, (address & 0x80) ? HIGH : LOW); // Write MSB first
         address <<= 1;
-        digitalWrite(_sckPin, LOW); // Clock high
-        delayMicroseconds(BASE_DELAY);        // Small delay
-        digitalWrite(_sckPin, HIGH);  // Clock low
-        delayMicroseconds(BASE_DELAY);        // Small delay
+        digitalWrite(_sckPin, LOW); // Clock low
+        delayMicroseconds(_spiSpeedDelayUs);        // Small delay
+        digitalWrite(_sckPin, HIGH);  // Clock high
+        delayMicroseconds(_spiSpeedDelayUs);        // Small delay
     }
     // Send data
     for (int i = 0; i < 8; i++) {
         digitalWrite(_mosiMisoPin, (data & 0x80) ? HIGH : LOW); // Write MSB first
         data <<= 1;
-        digitalWrite(_sckPin, LOW); // Clock high
-        delayMicroseconds(BASE_DELAY);        // Small delay
-        digitalWrite(_sckPin, HIGH);  // Clock low
-        delayMicroseconds(BASE_DELAY);        // Small delay
+        digitalWrite(_sckPin, LOW); // Clock low
+        delayMicroseconds(_spiSpeedDelayUs);        // Small delay
+        digitalWrite(_sckPin, HIGH);  // Clock high
+        delayMicroseconds(_spiSpeedDelayUs);        // Small delay
     }
     deselect();
 }
@@ -72,24 +72,24 @@ uint8_t SPIBitBang3Wire::read(uint8_t address) {
         digitalWrite(_mosiMisoPin, (address & 0x80) ? HIGH : LOW); // Write MSB first
         address <<= 1;
         digitalWrite(_sckPin, LOW); // Clock high
-        delayMicroseconds(BASE_DELAY);        // Small delay
+        delayMicroseconds(_spiSpeedDelayUs);        // Small delay
         digitalWrite(_sckPin, HIGH);  // Clock low
-        delayMicroseconds(BASE_DELAY);        // Small delay
+        delayMicroseconds(_spiSpeedDelayUs);        // Small delay
     }
     pinMode(_mosiMisoPin, INPUT); // Set MOSI/MISO as input to read data
     
-    delayMicroseconds(5*BASE_DELAY); // Handover delay
+    delayMicroseconds(5*_spiSpeedDelayUs); // Handover delay
 
     // Read data
     for (int i = 0; i < 8; i++) {
         data <<= 1;
         digitalWrite(_sckPin, LOW); // Clock high
-        delayMicroseconds(BASE_DELAY);        // Small delay
+        delayMicroseconds(_spiSpeedDelayUs);        // Small delay
         if (digitalRead(_mosiMisoPin)) {
             data |= 0x01;
         }
         digitalWrite(_sckPin, HIGH);  // Clock low
-        delayMicroseconds(BASE_DELAY);        // Small delay
+        delayMicroseconds(_spiSpeedDelayUs);        // Small delay
     }
     deselect();
     pinMode(_mosiMisoPin, OUTPUT); // Set MOSI/MISO back to output

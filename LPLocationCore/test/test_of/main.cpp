@@ -22,6 +22,9 @@ void loop() {
     uint8_t reg0 = spi.read(0x00);
     uint8_t reg1 = spi.read(0x01);
     uint8_t reg2 = spi.read(0x02);
+    uint8_t reg3 = spi.read(0x03);
+    uint8_t reg4 = spi.read(0x04);
+    uint8_t reg5 = spi.read(0x05);
 
     // Print the register values to the serial monitor
     Serial.print("Register 0x00: ");
@@ -30,6 +33,12 @@ void loop() {
     Serial.println(reg1, HEX);
     Serial.print("Register 0x02: ");
     Serial.println(reg2, HEX);
+    Serial.print("Register 0x03: ");
+    Serial.println(reg3, HEX);
+    Serial.print("Register 0x04: ");
+    Serial.println(reg4, HEX);
+    Serial.print("Register 0x05: ");
+    Serial.println(reg5, HEX);
 
     delay(1000); // Wait for 1 second before reading again
 }

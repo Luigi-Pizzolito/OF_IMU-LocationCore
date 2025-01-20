@@ -10,7 +10,7 @@ class PMW3610Driver {
 public:
     /* PMW3610 driver implementation */
     bool begin(int sckPin, int mosiMisoPin, int csPin, int irqPin, int resetPin);
-    void read_test();
+    String read_test();
 
 private:
     /* Bit-banged 3-wire SPI implementation & functions */

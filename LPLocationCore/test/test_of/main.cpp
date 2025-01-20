@@ -9,7 +9,21 @@ const int IRQ_PIN = 38; // Interrupt pin
 
 PMW3610Driver pmw;
 
+#include <WiFi.h>
+#include <esp_wifi.h>
+#include <QuickEspNow.h>
+
+#include <LiteLED.h>
+LiteLED led(LED_STRIP_WS2812, 0);
+static const crgb_t L_RED = 0xff0000;
+static const crgb_t L_GREEN = 0x00ff00;
+static const crgb_t L_BLUE = 0x0000ff;
+
 void setup() {
+    led.begin(16,1);
+    led.brightness(30);
+    led.setPixel(0,L_GREEN,1);
+
     Serial.begin(115200); // Initialize serial communication
     delay(2000); // Wait for the serial monitor to open
 
@@ -23,10 +37,26 @@ void setup() {
         while (1); // Stop the program if sensor initialization fails
     }
 
+    delay(1);
+
+    WiFi.mode(WIFI_STA);
+    WiFi.disconnect();
+    delay(100);
+
+    // quickEspNow.onDataRcvd(dataReceived);
+    quickEspNow.begin(1);
+    delay(100);
+
+    Serial.println("Ready to receive data on channel 1");
+    led.brightness(0,1);
+    led.setPixel(0,L_BLUE);
+
 }
 
 void loop() {
-    pmw.read_test(); // Read sensor data
-
-    delay(250); // Wait for 1 second before reading again
+    led.brightness(255,1);
+    String msg = pmw.read_test(); // Read sensor data
+    quickEspNow.send(ESPNOW_BROADCAST_ADDRESS, (uint8_t*)msg.c_str(), msg.length()); // Send sensor data over ESP-NOW
+    led.brightness(0,1);
+    delay(50); // Wait for 1 second before reading again
 }

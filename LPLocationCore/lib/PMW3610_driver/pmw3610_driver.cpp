@@ -529,7 +529,7 @@ bool PMW3610Driver::begin(int sckPin, int mosiMisoPin, int csPin, int irqPin, in
     return true;
 }
 
-void PMW3610Driver::read_test() {
+String PMW3610Driver::read_test() {
     /*
     uint8_t reg0 = _SPI_read(0x00);
     uint8_t reg1 = _SPI_read(0x01);
@@ -570,7 +570,7 @@ void PMW3610Driver::read_test() {
         Serial.print("\tDELTA_XY_H:\t");
         Serial.println(motion_data[3], HEX);
         Serial.print("\tSQUAL:\t\t");
-        Serial.println(motion_data[4], HEX);
+        Serial.println(motion_data[4]);
         Serial.print("\tSHUTTER:\t");
         Serial.println(static_cast<uint16_t>((motion_data[5] << 8) | motion_data[6]));
         Serial.print("\tPIX_MAX:\t");
@@ -592,6 +592,8 @@ void PMW3610Driver::read_test() {
         Serial.print(raw_x);
         Serial.print(", Y: ");
         Serial.println(raw_y);
+
+        return String("{\"squal\": ") + String(motion_data[4]) + ", \"x\": " + String(raw_x) + ", \"y\": " + String(raw_y) + ", \"mot\": " + String(motion_data[0]) + "}";
     }
 
 

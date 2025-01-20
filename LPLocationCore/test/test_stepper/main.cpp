@@ -2,8 +2,8 @@
 #include <Arduino.h>
 #include "FastAccelStepper.h"
 
-#define STEPPER_SPEED 800 //25000 // uS/step
-#define STEPPER_ACCELERATION 5000
+// #define STEPPER_SPEED 800 //25000 // uS/step
+#define STEPPER_ACCELERATION 100 //5000
 
 #define STEPPER_ENABLE 48
 #define STEPPER_ENABLE_ACTIVE_LOW false
@@ -58,13 +58,15 @@ void setup() {
         // stepperL1->setSpeedInUs(STEPPER_SPEED);
         // stepperL1->setAcceleration(STEPPER_ACCELERATION);
 
-        stepperL2->setSpeedInUs(STEPPER_SPEED);
+        // stepperL2->setSpeedInUs(STEPPER_SPEED);
+        stepperL2->setSpeedInHz(100);
         stepperL2->setAcceleration(STEPPER_ACCELERATION);
 
         // stepperR1->setSpeedInUs(STEPPER_SPEED);
         // stepperR1->setAcceleration(STEPPER_ACCELERATION);
 
-        stepperR2->setSpeedInUs(STEPPER_SPEED);
+        // stepperR2->setSpeedInUs(STEPPER_SPEED);
+        stepperR2->setSpeedInHz(100);
         stepperR2->setAcceleration(STEPPER_ACCELERATION);
 
         Serial.println("Steppers initialized");

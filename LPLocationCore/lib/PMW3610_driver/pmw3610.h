@@ -5,8 +5,8 @@
 // as datasheet does not provide much information
 
 /* Default configuration */
-#define PMW3610_DEFAULT_CPI                     3200   // Counts per inch (CPI) (200-3200, in 200 steps)
-#define PMW3610_DEFAULT_CPI_DIVISOR                4   // CPI divisor for register value conversion (1-100)
+#define PMW3610_DEFAULT_CPI                      800   // Counts per inch (CPI) (200-3200, in 200 steps)
+#define PMW3610_DEFAULT_CPI_DIVISOR                1   // CPI divisor for register value conversion (1-100)
 #define PMW3610_DEFAULT_PERFORMANCE             0x0D   // Mode: Normal, Vel_rate: 4ms, Poshi_rate: 4ms, Poslo_rate: 4ms
 #define PMW3610_DEFAULT_RUN_DOWNSHIFT_TIME_MS   500    // Run-mode downshift time in ms (13-3264), Time after which sensor goes from RUN to REST1 mode.
 #define PMW3610_DEFAULT_REST1_SAMPLE_TIME_MS    100    // Rest1-mode sample time in ms (10-2550), REST1 mode sample time in ms.

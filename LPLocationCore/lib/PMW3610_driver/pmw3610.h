@@ -4,6 +4,36 @@
 // Mostly taken from ZMK's PMW3610 driver
 // as datasheet does not provide much information
 
+/* Default configuration */
+#define PMW3610_DEFAULT_CPI                     3200   // Counts per inch (CPI) (200-3200, in 200 steps)
+#define PMW3610_DEFAULT_CPI_DIVISOR                4   // CPI divisor for register value conversion (1-100)
+#define PMW3610_DEFAULT_PERFORMANCE             0x0D   // Mode: Normal, Vel_rate: 4ms, Poshi_rate: 4ms, Poslo_rate: 4ms
+#define PMW3610_DEFAULT_RUN_DOWNSHIFT_TIME_MS   500    // Run-mode downshift time in ms (13-3264), Time after which sensor goes from RUN to REST1 mode.
+#define PMW3610_DEFAULT_REST1_SAMPLE_TIME_MS    100    // Rest1-mode sample time in ms (10-2550), REST1 mode sample time in ms.
+#define PMW3610_DEFAULT_REST1_DOWNSHIFT_TIME_MS 3000   // Rest1-mode downshift time in ms, Time after which sensor goes from REST1 to REST2 mode.
+#define PMW3610_DEFAULT_REST2_SAMPLE_TIME_MS    200    // Rest2-mode sample time in ms (10-2550), REST2 mode sample time in ms.
+#define PMW3610_DEFAULT_REST2_DOWNSHIFT_TIME_MS 30000  // Rest2-mode downshift time in ms, Time after which sensor goes from REST2 to REST3 mode.
+#define PMW3610_DEFAULT_REST3_SAMPLE_TIME_MS    300    // Rest3-mode sample time in ms (10-2550), REST3 mode sample time in ms.
+
+/* Sensor hard-coded config values */
+#define PMW3610_PRODUCT_ID           0x3E
+#define PMW3610_REVISION_ID          0x01
+#define PMW3610_POWERUP_CMD_RESET    0x5A
+#define PMW3610_SPI_CLOCK_CMD_ENABLE   0xBA
+#define PMW3610_SPI_CLOCK_CMD_DISABLE  0xB5
+#define PMW3610_MAX_CPI				 3200
+#define PMW3610_MIN_CPI				 200
+#define PWM3610_MAX_SAMPLE_TIME_MS   2550
+#define PWM3610_MIN_SAMPLE_TIME_MS   10
+
+#define PMW3610_MAX_BURST_SIZE       10
+#define PMW3610_BURST_SIZE           7
+#define PMW3610_X_L_POS              1
+#define PMW3610_Y_L_POS              2
+#define PMW3610_XY_H_POS             3
+#define PMW3610_SHUTTER_H_POS        5
+#define PMW3610_SHUTTER_L_POS        6
+
 /* Timing specifications */
 // Taken from ZMK's PMW3610 driver and ADNS-5050 datasheet
 #define PMW3610_RESET_HOLD_TIME_US   1      // Reset hold time (T_RSTH)
@@ -13,7 +43,6 @@
 #define PMW3610_HOLD_TIME_US         1      // 3-wire SPI hold time after handoff (T_HOLD)
 #define PMW3610_INTERREAD_TIME_US    1      // 3-wire SPI hold time between consecutive read commands (T_SRX)
 #define PMW3610_INTERWRITE_TIME_US   30     // 3-wire SPI hold time between consecutive write/read commands (T_SWX)
-
 #define PMW3610_INIT_SELF_TEST_MS    50     // Time to wait after self-test initialization
 
 /* Sensor registers (addresses) */
@@ -61,11 +90,14 @@
 
 #define PMW3610_REG_PRBS_TEST_CTL    0x47
 #define PMW3610_REG_SPI_PAGE0        0x7F
+
+//! we only have 7 bits since MSB is R/W select, then what are these registers?? unaccessible?
 #define PMW3610_REG_VCSEL_CTL        0x9E
 #define PMW3610_REG_LSR_CONTROL      0x9F
 #define PMW3610_REG_SPI_PAGE1        0xFF
 
-/* Sensor identification values */
-#define PMW3610_PRODUCT_ID           0x3E
-#define PMW3610_REVISION_ID          0x01
-#define PMW3610_POWERUP_CMD_RESET    0x5A
+/* Utility functions */
+
+// 12-bit two's complement value to int16_t
+// adapted from https://stackoverflow.com/questions/70802306/convert-a-12-bit-signed-number-in-c
+#define TOINT16(val, bits) (((struct {int16_t value: bits;}){val}).value)

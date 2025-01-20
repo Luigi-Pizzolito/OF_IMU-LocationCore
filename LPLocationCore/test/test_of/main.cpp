@@ -28,5 +28,5 @@ void setup() {
 void loop() {
     pmw.read_test(); // Read sensor data
 
-    delay(1000); // Wait for 1 second before reading again
+    delay(250); // Wait for 1 second before reading again
 }

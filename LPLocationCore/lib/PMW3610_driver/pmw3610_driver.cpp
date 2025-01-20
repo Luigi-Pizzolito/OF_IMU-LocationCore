@@ -571,10 +571,14 @@ void PMW3610Driver::read_test() {
         Serial.println(motion_data[3], HEX);
         Serial.print("\tSQUAL:\t\t");
         Serial.println(motion_data[4], HEX);
-        Serial.print("\tSHUTTER_H:\t");
-        Serial.println(motion_data[5], HEX);
-        Serial.print("\tSHUTTER_L:\t");
-        Serial.println(motion_data[6], HEX);
+        Serial.print("\tSHUTTER:\t");
+        Serial.println(static_cast<uint16_t>((motion_data[5] << 8) | motion_data[6]));
+        Serial.print("\tPIX_MAX:\t");
+        Serial.println(motion_data[7]);
+        Serial.print("\tPIX_AVG:\t");
+        Serial.println(motion_data[8]);
+        Serial.print("\tPIX_MIN:\t");
+        Serial.println(motion_data[9]);
 
         // Parse motion data
         int16_t raw_x =

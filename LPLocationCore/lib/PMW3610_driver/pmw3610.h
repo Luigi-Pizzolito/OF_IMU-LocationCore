@@ -27,7 +27,7 @@
 #define PWM3610_MIN_SAMPLE_TIME_MS   10
 
 #define PMW3610_MAX_BURST_SIZE       10
-#define PMW3610_BURST_SIZE           7
+#define PMW3610_BURST_SIZE           10 //7
 #define PMW3610_X_L_POS              1
 #define PMW3610_Y_L_POS              2
 #define PMW3610_XY_H_POS             3

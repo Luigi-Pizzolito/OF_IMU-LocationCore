@@ -36,6 +36,10 @@ void setup()
 void loop()
 {
   // put your main code here, to run repeatedly:
-  Serial.println(digitalRead(38));
-  delay(500);
+  // Serial.println(digitalRead(38));
+  if (pmw.data.motion)
+  {
+    pmw.printData();
+  }
+  delay(5);
 }

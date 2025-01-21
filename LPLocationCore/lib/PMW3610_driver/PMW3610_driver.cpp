@@ -1,10 +1,14 @@
 #include "PMW3610_driver.h"
 
 /* Constructor */
+#if PMW3610_USE_PIN_ISR
 PMW3610Driver *PMW3610Driver::_instance = nullptr;
 PMW3610Driver::PMW3610Driver() {
     _instance = this;
 }
+#else
+PMW3610Driver::PMW3610Driver() {}
+#endif
 
 /* Bit-banged 3-wire SPI functions */
 // CPOL and CPHA are 1, so clock is normally high and data is sampled on the rising edge
@@ -516,6 +520,7 @@ bool PMW3610Driver::_motion_burst_parse() {
 }
 
 /* PMW3610 Driver interrupt functions */
+#if PMW3610_USE_PIN_ISR
 // Interrupt service routine for pin-change interrupt
 IRAM_ATTR void PMW3610Driver::_intISR() {
     if (_instance) {
@@ -529,6 +534,7 @@ IRAM_ATTR void PMW3610Driver::_intISR() {
         xTaskNotifyFromISR(_instance->_intTaskHandle, 0, eNoAction, NULL);
     }
 }
+#endif
 // Task to periodically update motion data if motion is detected
 //todo: add error handling on _motion_burst_parse
 void PMW3610Driver::_intTask(void *pvParameters) {
@@ -536,12 +542,17 @@ void PMW3610Driver::_intTask(void *pvParameters) {
     #ifdef DEBUG
         Serial.println("Task started!");
     #endif
+
     while (true) {
 
-        // Wait for interrupt
-        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-        #ifdef DEBUG
-            Serial.println("Task received ISR notification!");
+        #if PMW3610_USE_PIN_ISR
+            // Wait for interrupt
+            ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+            #ifdef DEBUG
+                Serial.println("Task received ISR notification!");
+            #endif
+        #else
+            driver->_intPinLow = digitalRead(driver->_irqPin) == LOW;
         #endif
 
         // Check if the interrupt pin is low (motion detected)
@@ -561,7 +572,13 @@ void PMW3610Driver::_intTask(void *pvParameters) {
             driver->_motion_burst_parse();
         // }
 
+        #if !PMW3610_USE_PIN_ISR
+            // Delay
+            vTaskDelay(pdMS_TO_TICKS(PMW3610_MOTION_DATA_UPDATE_RATE_MS));
+        #endif
+
     }
+
 }
 
 /* PMW3610 Driver public functions */
@@ -604,11 +621,13 @@ bool PMW3610Driver::begin(int sckPin, int mosiMisoPin, int csPin, int irqPin, in
 
     // Step 5: Set up interrupt & start task
     //todo: add error handling on interrupt & task setup
-    // Attach interrupt
-    _irqPin = irqPin;
-    pinMode(_irqPin, INPUT);
-    // attachInterrupt(digitalPinToInterrupt(_irqPin), std::bind(&PMW3610Driver::_intISR, this), CHANGE);
-    // attachInterrupt(digitalPinToInterrupt(_irqPin), &PMW3610Driver::_intISR, CHANGE);
+    #if PMW3610_USE_PIN_ISR
+        // Attach interrupt
+        _irqPin = irqPin;
+        pinMode(_irqPin, INPUT);
+        // attachInterrupt(digitalPinToInterrupt(_irqPin), std::bind(&PMW3610Driver::_intISR, this), CHANGE);
+        attachInterrupt(digitalPinToInterrupt(_irqPin), &PMW3610Driver::_intISR, CHANGE);
+    #endif
     
     // Create task
     BaseType_t xReturned;

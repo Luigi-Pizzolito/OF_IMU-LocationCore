@@ -12,6 +12,7 @@
 #define PMW3610_TASK_PRIORITY               1
 #define PMW3610_TASK_CORE                   1
 #define PMW3610_TASK_STACK_SIZE             2048
+#define PMW3610_USE_PIN_ISR                 false
 
 #define DEBUG
 //todo: add smart algorithm for more surface compatability
@@ -24,8 +25,8 @@
 // Struct to hold sensor data
 struct PMW3610Data {
     bool motion;
-    uint16_t delta_x;
-    uint16_t delta_y;
+    int16_t delta_x;
+    int16_t delta_y;
     uint16_t squal;
     bool err;
     bool ovf;
@@ -79,8 +80,10 @@ private:
     std::function<void()> _callback;
     TaskHandle_t _intTaskHandle = NULL;
     volatile bool _intPinLow = false;
+    #if PMW3610_USE_PIN_ISR
     static PMW3610Driver *_instance;
     static void IRAM_ATTR _intISR();
+    #endif
     static void _intTask(void *pvParameters);
     bool _motion_burst_read(uint8_t *motion_data, size_t len);
     bool _motion_burst_parse();

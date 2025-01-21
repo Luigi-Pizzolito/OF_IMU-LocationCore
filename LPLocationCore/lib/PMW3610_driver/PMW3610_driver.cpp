@@ -156,6 +156,7 @@ void PMW3610Driver::__SPI_write(uint8_t address, uint8_t data) {
 void PMW3610Driver::_SPI_write(uint8_t address, uint8_t data) {
     // Enable device SPI clock
     __SPI_write(PMW3610_REG_SPI_CLK_ON_REQ, PMW3610_SPI_CLOCK_CMD_ENABLE);
+    delayMicroseconds(1);
 
     // Write data
     __SPI_write(address, data);
@@ -671,7 +672,7 @@ bool PMW3610Driver::begin(int sckPin, int mosiMisoPin, int csPin, int irqPin, in
         Serial.println("PMW3610 self-test passed!");
     #endif
 
-// Step 4: Configure sensor
+    // Step 4: Configure sensor
     #ifdef DEBUG
         Serial.println("Configuring PMW3610 sensor...");
     #endif
@@ -726,3 +727,93 @@ void PMW3610Driver::printData() {
     Serial.print(data.ovf ? "true" : "false");
     Serial.println("}");
 }
+
+#ifdef PMW3610_ENABLE_FRAME_CAPTURE
+void PMW3610Driver::capture_frame() {
+    // Capture frame data
+
+    // Step 1: Pause task
+    vTaskSuspend(_intTaskHandle);
+
+    // Step 2: Send frame grab command
+    __SPI_write(PMW3610_REG_PERFORMANCE, 0x11);
+    __SPI_write(PMW3610_REG_SPI_CLK_ON_REQ, PMW3610_SPI_CLOCK_CMD_ENABLE);
+    delayMicroseconds(1);
+    __SPI_write(PMW3610_REG_SMART_EN, 0x10);
+    delayMicroseconds(1);
+    __SPI_write(PMW3610_REG_FRAME_GRAB, 0x80);
+    delay(10);
+
+    // Step 3: Read frame data
+    pinMode(_mosiMisoPin, OUTPUT);  // Set MOSI/MISO as output to send address
+    _SPI__select();
+
+    // Send frame read address
+    uint8_t address = PMW3610_REG_MOTION_BURST & 0x7F;  // Ensure MSB of the address is 0 for read operation
+    // Send address, sensor reads on low to high CLK transition
+    for (int i = 0; i < 8; i++) {
+        digitalWrite(_sckPin, LOW);           // Clock low
+        delayMicroseconds(_spiSpeedDelayUs);  // Clock half-cycle delay
+
+        // Shift-out address
+        digitalWrite(_mosiMisoPin, (address & 0x80) ? HIGH : LOW);  // Write MSB first
+        address <<= 1;
+
+        digitalWrite(_sckPin, HIGH);          // Clock high
+        delayMicroseconds(_spiSpeedDelayUs);  // Clock half-cycle delay
+    }
+
+    pinMode(_mosiMisoPin, INPUT);  // Set MOSI/MISO as input to read data
+
+    delayMicroseconds(PMW3610_HANDOVER_TIME_US);  // Handover delay
+
+    // Read frame data
+    for (size_t i = 0; i < 484; i++) {
+        // Read data, sensor sends on high to low CLK transition, read on low to high CLK transition
+        for (int j = 0; j < 8; j++) {
+            frame_data[i] <<= 1;
+            digitalWrite(_sckPin, LOW);           // Clock low
+            delayMicroseconds(_spiSpeedDelayUs);  // Clock half-cycle delay
+
+            if (digitalRead(_mosiMisoPin)) {  // Shift-in read data
+                frame_data[i] |= 0x01;
+            }
+
+            digitalWrite(_sckPin, HIGH);          // Clock high
+            delayMicroseconds(_spiSpeedDelayUs);  // Clock half-cycle delay
+        }
+    }
+
+    _SPI__deselect();
+    delayMicroseconds(PMW3610_HOLD_TIME_US);  // Hold time after a read operation
+    pinMode(_mosiMisoPin, OUTPUT);            // Set MOSI/MISO back to output
+
+    delayMicroseconds(PMW3610_INTERREAD_TIME_US);  // Inter-command read minimum delay
+
+    // Step 4: Reset sensor
+    _SPI_reset();
+    delay(PMW3610_WAKEUP_TIME_MS);
+
+    // Step 5: Reconfgure sensor
+    _configure();
+
+    // Step 6: Resume task
+    vTaskResume(_intTaskHandle);
+}
+
+void PMW3610Driver::print_frame_as_pgm() {
+    Serial.println("P2");
+    Serial.println("22 22");  // Assuming the frame is 30x30 pixels
+    Serial.println("255");    // Max grayscale value
+
+    for (size_t j = 0; j < 22; j++) {
+        for (size_t k = 0; k < 22; k++) {
+            Serial.print(frame_data[j * 22 + k], DEC);
+            Serial.print(" ");
+        }
+        Serial.println();
+    }
+
+    Serial.println();
+}
+#endif

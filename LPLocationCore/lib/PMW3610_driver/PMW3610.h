@@ -16,6 +16,7 @@
 #define PMW3610_DEFAULT_REST3_SAMPLE_TIME_MS    300    // Rest3-mode sample time in ms (10-2550), REST3 mode sample time in ms.
 // #define PMW3610_SMART_ALGORITHM                        // Extends sensor tracking across a wider range of surfaces
 // #define PMW3610_EXTENDED_SELF_TEST                     // Extended self-test
+#define PMW3610_ENABLE_FRAME_CAPTURE                   // Enable frame capture
 
 /* Sensor hard-coded config values */
 #define PMW3610_PRODUCT_ID              0x3E

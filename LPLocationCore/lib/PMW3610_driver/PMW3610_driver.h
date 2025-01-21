@@ -15,7 +15,6 @@
 #define PMW3610_USE_PIN_ISR                 false
 
 #define DEBUG
-// todo: add frame data output
 
 // Struct to hold sensor data
 struct PMW3610Data {
@@ -32,9 +31,18 @@ class PMW3610Driver {
    public:
     /* PMW3610 driver implementation */
     PMW3610Driver();
+
     PMW3610Data data;
+    #ifdef PMW3610_ENABLE_FRAME_CAPTURE
+        uint8_t     frame_data[484];
+    #endif
+
     bool        begin(int sckPin, int mosiMisoPin, int csPin, int irqPin, int resetPin);
     void        printData();
+    #ifdef PMW3610_ENABLE_FRAME_CAPTURE
+        void    capture_frame();
+        void    print_frame_as_pgm();
+    #endif
 
    private:
     /* Bit-banged 3-wire SPI implementation & functions */
@@ -65,9 +73,9 @@ class PMW3610Driver {
     bool _set_sample_time(uint8_t reg_addr, uint32_t sample_time);
     bool _configure();
 
-    #ifdef PMW3610_SMART_ALGORITHM
-        bool _smart_algorithm_flag = true;
-    #endif
+#ifdef PMW3610_SMART_ALGORITHM
+    bool _smart_algorithm_flag = true;
+#endif
     bool _motion_burst_read(uint8_t *motion_data, size_t len);
     bool _motion_burst_parse();
 

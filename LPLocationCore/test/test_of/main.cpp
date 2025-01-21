@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <pmw3610_driver.h>
+#include <PMW3610_driver.h>
 
 const int CS_PIN  = 40;  // Chip Select pin
 const int SCK_PIN = 41;  // Serial Clock pin

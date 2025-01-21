@@ -23,6 +23,19 @@ void setup() {
         Serial.println("PMW3610 sensor initialization failed!");
         while (1);  // Stop the program if sensor initialization fails
     }
+
+    #ifdef PMW3610_ENABLE_FRAME_CAPTURE
+        for (int i = 0; i < 5000 / 5; i++) {
+            if (pmw.data.motion) {
+                pmw.printData();
+            }
+            delay(5);
+        }
+        pmw.capture_frame();
+        delay(5);
+        pmw.print_frame_as_pgm();
+        delay(5);
+    #endif
 }
 
 void loop() {

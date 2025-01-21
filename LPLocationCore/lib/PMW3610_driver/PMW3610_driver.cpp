@@ -551,18 +551,11 @@ void PMW3610Driver::_intTask(void *pvParameters) {
             #ifdef DEBUG
                 Serial.println("Task received ISR notification!");
             #endif
-        #else
-            driver->_intPinLow = digitalRead(driver->_irqPin) == LOW;
-        #endif
 
         // Check if the interrupt pin is low (motion detected)
         while (driver->_intPinLow) {
-            // Read motion data & callback every Xms
+            // Read motion data every Xms, when moving
             driver->_motion_burst_parse();
-            // Call callback function
-            if (driver->_callback) {
-                driver->_callback();
-            }
             // Delay
             vTaskDelay(pdMS_TO_TICKS(PMW3610_MOTION_DATA_UPDATE_RATE_MS));
         }
@@ -572,7 +565,10 @@ void PMW3610Driver::_intTask(void *pvParameters) {
             driver->_motion_burst_parse();
         // }
 
-        #if !PMW3610_USE_PIN_ISR
+        #else
+            // Read motion data every Xms, always
+            driver->_motion_burst_parse();
+            
             // Delay
             vTaskDelay(pdMS_TO_TICKS(PMW3610_MOTION_DATA_UPDATE_RATE_MS));
         #endif
@@ -621,10 +617,11 @@ bool PMW3610Driver::begin(int sckPin, int mosiMisoPin, int csPin, int irqPin, in
 
     // Step 5: Set up interrupt & start task
     //todo: add error handling on interrupt & task setup
+    // Setup interrupt pin
+    _irqPin = irqPin;
+    pinMode(_irqPin, INPUT);
     #if PMW3610_USE_PIN_ISR
         // Attach interrupt
-        _irqPin = irqPin;
-        pinMode(_irqPin, INPUT);
         // attachInterrupt(digitalPinToInterrupt(_irqPin), std::bind(&PMW3610Driver::_intISR, this), CHANGE);
         attachInterrupt(digitalPinToInterrupt(_irqPin), &PMW3610Driver::_intISR, CHANGE);
     #endif
@@ -642,12 +639,6 @@ bool PMW3610Driver::begin(int sckPin, int mosiMisoPin, int csPin, int irqPin, in
     #endif
 
     return true;
-}
-
-void PMW3610Driver::linkInterrupt(std::function<void()> callback) {
-    //* Must be called before begin!
-    // Save callback function pointer
-    _callback = callback;
 }
 
 void PMW3610Driver::printData() {

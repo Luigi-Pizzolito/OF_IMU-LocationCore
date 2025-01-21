@@ -11,12 +11,6 @@ void setup()
   // put your setup code here, to run once:
   Serial.begin(115200);
   delay(2000);
-  // Serial.println("Hello World!");
-  // pinMode(38, INPUT);
-  pmw.linkInterrupt([]()
-                    {
-    Serial.println("Motion detected!");
-    pmw.printData(); });
 
   Serial.println("Starting pmw communication...");
   if (
@@ -36,7 +30,6 @@ void setup()
 void loop()
 {
   // put your main code here, to run repeatedly:
-  // Serial.println(digitalRead(38));
   if (pmw.data.motion)
   {
     pmw.printData();

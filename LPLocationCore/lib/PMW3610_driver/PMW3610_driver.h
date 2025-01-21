@@ -31,7 +31,6 @@ struct PMW3610Data {
     bool err;
     bool ovf;
 };
-std::ostream &operator<<(std::ostream &os, const PMW3610Data &data);
 
 // PMW3610 driver class
 class PMW3610Driver {
@@ -40,8 +39,6 @@ public:
     PMW3610Driver();
     PMW3610Data data;
     bool begin(int sckPin, int mosiMisoPin, int csPin, int irqPin, int resetPin);
-    void linkInterrupt(std::function<void()> callback = nullptr);
-
     void printData();
 
     #ifdef DEBUG
@@ -77,14 +74,14 @@ private:
     bool _set_sample_time(uint8_t reg_addr, uint32_t sample_time);
     bool _configure();
 
-    std::function<void()> _callback;
-    TaskHandle_t _intTaskHandle = NULL;
-    volatile bool _intPinLow = false;
-    #if PMW3610_USE_PIN_ISR
-    static PMW3610Driver *_instance;
-    static void IRAM_ATTR _intISR();
-    #endif
-    static void _intTask(void *pvParameters);
     bool _motion_burst_read(uint8_t *motion_data, size_t len);
     bool _motion_burst_parse();
+
+    #if PMW3610_USE_PIN_ISR
+        volatile bool _intPinLow = false;
+        static PMW3610Driver *_instance;
+        static void IRAM_ATTR _intISR();
+    #endif
+    TaskHandle_t _intTaskHandle = NULL;
+    static void _intTask(void *pvParameters);
 };

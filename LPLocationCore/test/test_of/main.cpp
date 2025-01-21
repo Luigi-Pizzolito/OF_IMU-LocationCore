@@ -1,61 +1,49 @@
 #include <Arduino.h>
-#include <PMW3610_driver.h>
 
-const int CS_PIN  = 40;  // Chip Select pin
-const int SCK_PIN = 41;  // Serial Clock pin
-const int DIO_PIN = 42;  // Data I/O pin
-const int RST_PIN = 39;  // Reset pin
-const int IRQ_PIN = 38;  // Interrupt pin
+#include <config.h>
+
+#define DEBUG
+#define PMW3610_ENABLE_FRAME_CAPTURE
+#include <PMW3610_driver.h>
 
 PMW3610Driver pmw;
 
-#include <WiFi.h>
-#include <esp_wifi.h>
-#include <QuickEspNow.h>
-
-#include <LiteLED.h>
-LiteLED             led(LED_STRIP_WS2812, 0);
-static const crgb_t L_RED   = 0xff0000;
-static const crgb_t L_GREEN = 0x00ff00;
-static const crgb_t L_BLUE  = 0x0000ff;
-
 void setup() {
-    led.begin(16, 1);
-    led.brightness(30);
-    led.setPixel(0, L_GREEN, 1);
+    // put your setup code here, to run once:
+    Serial.begin(115200);
+    delay(2000);
 
-    Serial.begin(115200);  // Initialize serial communication
-    delay(2000);           // Wait for the serial monitor to open
+    bool suc = true;
 
     Serial.println("Starting pmw communication...");
-    if (
-        pmw.begin(SCK_PIN, DIO_PIN, CS_PIN, RST_PIN, IRQ_PIN)  // Initialize the sensor
-    ) {
+    // Initialize the sensor
+    suc = pmw.begin(PMW3610_SCK_PIN, PMW3610_DIO_PIN, PMW3610_CS_PIN,
+                    PMW3610_RST_PIN, PMW3610_IRQ_PIN);
+    if (suc) {
         Serial.println("PMW3610 sensor initialized successfully!");
     } else {
         Serial.println("PMW3610 sensor initialization failed!");
         while (1);  // Stop the program if sensor initialization fails
     }
 
-    delay(1);
-
-    WiFi.mode(WIFI_STA);
-    WiFi.disconnect();
-    delay(100);
-
-    // quickEspNow.onDataRcvd(dataReceived);
-    quickEspNow.begin(1);
-    delay(100);
-
-    Serial.println("Ready to receive data on channel 1");
-    led.brightness(0, 1);
-    led.setPixel(0, L_BLUE);
+    #ifdef PMW3610_ENABLE_FRAME_CAPTURE
+        for (int i = 0; i < 5000 / 5; i++) {
+            if (pmw.data.motion) {
+                pmw.printData();
+            }
+            delay(5);
+        }
+        pmw.capture_frame();
+        delay(5);
+        pmw.print_frame_as_pgm();
+        delay(5);
+    #endif
 }
 
 void loop() {
-    led.brightness(255, 1);
-    String msg = pmw.read_test();                                                     // Read sensor data
-    quickEspNow.send(ESPNOW_BROADCAST_ADDRESS, (uint8_t*)msg.c_str(), msg.length());  // Send sensor data over ESP-NOW
-    led.brightness(0, 1);
-    delay(50);  // Wait for 1 second before reading again
+    // put your main code here, to run repeatedly:
+    if (pmw.data.motion) {
+        pmw.printData();
+    }
+    delay(5);
 }

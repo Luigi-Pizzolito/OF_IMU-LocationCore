@@ -14,7 +14,7 @@
 #define PMW3610_TASK_STACK_SIZE             2048
 #define PMW3610_USE_PIN_ISR                 false
 
-#define DEBUG
+// #define DEBUG
 
 // Struct to hold sensor data
 struct PMW3610Data {

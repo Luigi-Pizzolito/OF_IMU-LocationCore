@@ -112,11 +112,6 @@ uint8_t PMW3610Driver::_SPI_read(uint8_t address) {
 }
 
 void PMW3610Driver::__SPI_write(uint8_t address, uint8_t data) {
-    // Check if the address is a valid
-    if (address > 0x7F) {
-        Serial.println("Invalid address for write operation!");
-        return;
-    }
     address |= 0x80;                // Ensure MSB of the address is 1 for write operation
     pinMode(_mosiMisoPin, OUTPUT);  // Set MOSI/MISO as output to send address and data
     _SPI__select();
@@ -154,6 +149,12 @@ void PMW3610Driver::__SPI_write(uint8_t address, uint8_t data) {
 }
 
 void PMW3610Driver::_SPI_write(uint8_t address, uint8_t data) {
+    // Check if the address is a valid
+    if (address > 0x7F) {
+        Serial.println("Invalid address for write operation!");
+        return;
+    }
+
     // Enable device SPI clock
     __SPI_write(PMW3610_REG_SPI_CLK_ON_REQ, PMW3610_SPI_CLOCK_CMD_ENABLE);
     delayMicroseconds(1);
@@ -218,40 +219,40 @@ bool PMW3610Driver::_self_test() {
         return false;
     }
 
-    #ifdef PMW3610_EXTENDED_SELF_TEST
-        // Perform extended self-test
-        // Step 1: Reset
-        _SPI_write(PMW3610_REG_POWER_UP_RESET, PMW3610_POWERUP_CMD_RESET);
+#ifdef PMW3610_EXTENDED_SELF_TEST
+    // Perform extended self-test
+    // Step 1: Reset
+    _SPI_write(PMW3610_REG_POWER_UP_RESET, PMW3610_POWERUP_CMD_RESET);
+    delay(PMW3610_WAKEUP_TIME_MS);
+    // Step 2: Start extended self-test
+    _SPI_write(PMW3610_REG_SPI_CLK_ON_REQ, PMW3610_SPI_CLOCK_CMD_ENABLE);
+    delayMicroseconds(1);
+    _SPI_write(PMW3610_REG_SMART_EN, 0x10);
+    _SPI_write(PMW3610_REG_SELF_TEST, 0x01);
+    delay(64 * 4);  // Wait for 64 frames
+    delay(PMW3610_INIT_SELF_TEST_MS);
+    // Step 3: Check results
+    uint8_t crc[4] = {0x00, 0x00, 0x00};
+    crc[0]         = _SPI_read(PMW3610_REG_CRC0);
+    crc[1]         = _SPI_read(PMW3610_REG_CRC1);
+    crc[2]         = _SPI_read(PMW3610_REG_CRC2);
+    crc[3]         = _SPI_read(PMW3610_REG_CRC3);
+    if (crc[0] != 0x73 || crc[1] != 0xc4 || crc[2] != 0xc1 || crc[3] != 0xEA) {
+        Serial.println("PMW3610 extended self-test failed!");
+        Serial.print("CRC0: ");
+        Serial.print(crc[0], HEX);
+        Serial.print(", CRC1: ");
+        Serial.print(crc[1], HEX);
+        Serial.print(", CRC2: ");
+        Serial.print(crc[2], HEX);
+        Serial.print(", CRC3: ");
+        Serial.println(crc[3], HEX);
+        return false;
+    } else {
+        _SPI_reset();
         delay(PMW3610_WAKEUP_TIME_MS);
-        // Step 2: Start extended self-test
-        _SPI_write(PMW3610_REG_SPI_CLK_ON_REQ, PMW3610_SPI_CLOCK_CMD_ENABLE);
-        delayMicroseconds(1);
-        _SPI_write(PMW3610_REG_SMART_EN, 0x10);
-        _SPI_write(PMW3610_REG_SELF_TEST, 0x01);
-        delay(64*4); // Wait for 64 frames
-        delay(PMW3610_INIT_SELF_TEST_MS);
-        //Step 3: Check results
-        uint8_t crc[4] = {0x00, 0x00, 0x00};
-        crc[0] = _SPI_read(PMW3610_REG_CRC0);
-        crc[1] = _SPI_read(PMW3610_REG_CRC1);
-        crc[2] = _SPI_read(PMW3610_REG_CRC2);
-        crc[3] = _SPI_read(PMW3610_REG_CRC3);
-        if (crc[0] != 0x73 || crc[1] != 0xc4 || crc[2] != 0xc1 || crc[3] != 0xEA) {
-            Serial.println("PMW3610 extended self-test failed!");
-            Serial.print("CRC0: ");
-            Serial.print(crc[0], HEX);
-            Serial.print(", CRC1: ");
-            Serial.print(crc[1], HEX);
-            Serial.print(", CRC2: ");
-            Serial.print(crc[2], HEX);
-            Serial.print(", CRC3: ");
-            Serial.println(crc[3], HEX);
-            return false;
-        } else {
-            _SPI_reset();
-            delay(PMW3610_WAKEUP_TIME_MS);
-        }
-    #endif
+    }
+#endif
 
     return true;
 }
@@ -521,38 +522,38 @@ bool PMW3610Driver::_motion_burst_read(uint8_t *motion_data, size_t len) {
 
     delayMicroseconds(PMW3610_INTERREAD_TIME_US);  // Inter-command read minimum delay
 
-    #ifdef PMW3610_SMART_ALGORITHM
-        // Smart algorithm to extends sensor tracking across a wider range of surfaces
-        #ifdef DEBUG
-            Serial.print("Shutter: ");
-            Serial.print(motion_data[PMW3610_SHUTTER_H_POS]);
-            Serial.print(" ");
-            Serial.print((motion_data[PMW3610_SHUTTER_H_POS] == 0x00) ? "YES" : "NO");
-            Serial.print(" ");
-            Serial.print(motion_data[PMW3610_SHUTTER_L_POS]);
-            Serial.print(" ");
-            Serial.println((motion_data[PMW3610_SHUTTER_L_POS] < 45) ? "<45" : ">45");
-        #endif
+#ifdef PMW3610_SMART_ALGORITHM
+                                                   // Smart algorithm to extends sensor tracking across a wider range of surfaces
+#    ifdef DEBUG
+    Serial.print("Shutter: ");
+    Serial.print(motion_data[PMW3610_SHUTTER_H_POS]);
+    Serial.print(" ");
+    Serial.print((motion_data[PMW3610_SHUTTER_H_POS] == 0x00) ? "YES" : "NO");
+    Serial.print(" ");
+    Serial.print(motion_data[PMW3610_SHUTTER_L_POS]);
+    Serial.print(" ");
+    Serial.println((motion_data[PMW3610_SHUTTER_L_POS] < 45) ? "<45" : ">45");
+#    endif
 
-        if (_smart_algorithm_flag && motion_data[PMW3610_SHUTTER_H_POS] == 0x00 && motion_data[PMW3610_SHUTTER_L_POS] < 45) {
-            // Smart enable
-            #ifdef DEBUG
-                Serial.println("Smart algorithm enabled!");
-            #endif
+    if (_smart_algorithm_flag && motion_data[PMW3610_SHUTTER_H_POS] == 0x00 && motion_data[PMW3610_SHUTTER_L_POS] < 45) {
+// Smart enable
+#    ifdef DEBUG
+        Serial.println("Smart algorithm enabled!");
+#    endif
 
-            _SPI_write(PMW3610_REG_SMART_EN, 0x00);
-            _smart_algorithm_flag = false;
-        }
-        if (!_smart_algorithm_flag && motion_data[PMW3610_SHUTTER_H_POS] == 0x00 && motion_data[PMW3610_SHUTTER_L_POS] > 45) {
-            // Smart disable
-            #ifdef DEBUG
-                Serial.println("Smart algorithm disabled!");
-            #endif
+        _SPI_write(PMW3610_REG_SMART_EN, 0x00);
+        _smart_algorithm_flag = false;
+    }
+    if (!_smart_algorithm_flag && motion_data[PMW3610_SHUTTER_H_POS] == 0x00 && motion_data[PMW3610_SHUTTER_L_POS] > 45) {
+// Smart disable
+#    ifdef DEBUG
+        Serial.println("Smart algorithm disabled!");
+#    endif
 
-            _SPI_write(PMW3610_REG_SMART_EN, 0x80);
-            _smart_algorithm_flag = true;
-        }
-    #endif
+        _SPI_write(PMW3610_REG_SMART_EN, 0x80);
+        _smart_algorithm_flag = true;
+    }
+#endif
 
     return true;
 }
@@ -645,9 +646,9 @@ void PMW3610Driver::_intTask(void *pvParameters) {
 /* PMW3610 Driver public functions */
 
 bool PMW3610Driver::begin(int sckPin, int mosiMisoPin, int csPin, int irqPin, int resetPin) {
-    #ifdef DEBUG
-        Serial.println("Initializing PMW3610 sensor...");
-    #endif
+#ifdef DEBUG
+    Serial.println("Initializing PMW3610 sensor...");
+#endif
 
     // Step 1: Power up reset
     // Start SPI communication
@@ -660,22 +661,22 @@ bool PMW3610Driver::begin(int sckPin, int mosiMisoPin, int csPin, int irqPin, in
     if (!_check_product_id()) {
         return false;
     }
-    #ifdef DEBUG
-        Serial.println("PMW3610 product ID and revision ID match!");
-    #endif
+#ifdef DEBUG
+    Serial.println("PMW3610 product ID and revision ID match!");
+#endif
 
     // Step 2: Perform self-test
     if (!_self_test()) {
         return false;
     }
-    #ifdef DEBUG
-        Serial.println("PMW3610 self-test passed!");
-    #endif
+#ifdef DEBUG
+    Serial.println("PMW3610 self-test passed!");
+#endif
 
-    // Step 4: Configure sensor
-    #ifdef DEBUG
-        Serial.println("Configuring PMW3610 sensor...");
-    #endif
+// Step 4: Configure sensor
+#ifdef DEBUG
+    Serial.println("Configuring PMW3610 sensor...");
+#endif
     if (!_configure()) {
         return false;
     }
@@ -803,7 +804,7 @@ void PMW3610Driver::capture_frame() {
 
 void PMW3610Driver::print_frame_as_pgm() {
     Serial.println("P2");
-    Serial.println("22 22");  // Assuming the frame is 30x30 pixels
+    Serial.println("22 22");  // Frame is 22x22 pixels
     Serial.println("255");    // Max grayscale value
 
     for (size_t j = 0; j < 22; j++) {

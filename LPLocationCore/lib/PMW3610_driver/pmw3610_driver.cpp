@@ -530,28 +530,6 @@ bool PMW3610Driver::begin(int sckPin, int mosiMisoPin, int csPin, int irqPin, in
 }
 
 String PMW3610Driver::read_test() {
-    /*
-    uint8_t reg0 = _SPI_read(0x00);
-    uint8_t reg1 = _SPI_read(0x01);
-    uint8_t reg2 = _SPI_read(0x02);
-    uint8_t reg3 = _SPI_read(0x03);
-    uint8_t reg4 = _SPI_read(0x04);
-    uint8_t reg5 = _SPI_read(0x05);
-
-    // Print the register values to the serial monitor
-    Serial.print("Register 0x00: ");
-    Serial.println(reg0, HEX);
-    Serial.print("Register 0x01: ");
-    Serial.println(reg1, HEX);
-    Serial.print("Register 0x02: ");
-    Serial.println(reg2, HEX);
-    Serial.print("Register 0x03: ");
-    Serial.println(reg3, HEX);
-    Serial.print("Register 0x04: ");
-    Serial.println(reg4, HEX);
-    Serial.print("Register 0x05: ");
-    Serial.println(reg5, HEX);
-    */
 
    Serial.println(millis());
 

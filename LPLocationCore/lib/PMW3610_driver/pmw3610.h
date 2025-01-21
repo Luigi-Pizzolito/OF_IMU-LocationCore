@@ -35,7 +35,7 @@
 #define PMW3610_SHUTTER_L_POS        6
 
 /* Timing specifications */
-// Taken from ZMK's PMW3610 driver and ADNS-5050 datasheet
+// Taken from ZMK's PMW3610 driver and PMW3610 datasheet
 #define PMW3610_RESET_HOLD_TIME_US   1      // Reset hold time (T_RSTH)
 #define PMW3610_WAKEUP_TIME_MS       10     // Post-reset wait time (T_WKUP)
 #define PMW3610_NCS_SETUP_TIME_US    1      // 3-wire SPI chip select setup time (T_NCSS)
@@ -91,7 +91,8 @@
 #define PMW3610_REG_PRBS_TEST_CTL    0x47
 #define PMW3610_REG_SPI_PAGE0        0x7F
 
-//! we only have 7 bits since MSB is R/W select, then what are these registers?? unaccessible?
+//? We only have 7 bits since MSB is R/W select, then what are these registers?? unaccessible?
+//* They can be accesed by writing to REG_SPI_PAGE1
 #define PMW3610_REG_VCSEL_CTL        0x9E
 #define PMW3610_REG_LSR_CONTROL      0x9F
 #define PMW3610_REG_SPI_PAGE1        0xFF

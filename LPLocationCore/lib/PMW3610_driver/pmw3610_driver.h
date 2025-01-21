@@ -6,6 +6,10 @@
 // PMW3610 driver class, using bit-banged 3-wire SPI implementation
 #define DEBUG
 
+//todo: add smart algorithm for more surface compatability
+//todo: standarisize the output data with struct
+//todo: add frame data output
+
 class PMW3610Driver {
 public:
     /* PMW3610 driver implementation */

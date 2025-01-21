@@ -1,11 +1,14 @@
-#include "pmw3610_driver.h"
+#include "PMW3610_driver.h"
+
+/* Constructor */
+PMW3610Driver *PMW3610Driver::_instance = nullptr;
+PMW3610Driver::PMW3610Driver() {
+    _instance = this;
+}
 
 /* Bit-banged 3-wire SPI functions */
 // CPOL and CPHA are 1, so clock is normally high and data is sampled on the rising edge
 // Default working frequency is 500kHz
-
-//todo: add motion burst read & data output
-//todo: figure out motion interrupt handling
 
 void PMW3610Driver::_SPI_begin(int sckPin, int mosiMisoPin, int csPin, int resetPin, uint32_t spiSpeedDelayUs) {
     // Save configuration
@@ -482,15 +485,91 @@ bool PMW3610Driver::_motion_burst_read(uint8_t *motion_data, size_t len) {
     return true;
 }
 
+bool PMW3610Driver::_motion_burst_parse() {
+    // Parse motion burst data
+    uint8_t motion_data[PMW3610_BURST_SIZE];
+
+    if (_motion_burst_read(motion_data, PMW3610_BURST_SIZE)) {
+        // Parse motion data
+        uint8_t motion_reg = motion_data[PMW3610_MOTION_POS];
+        //      BIT 7: MOTION
+        //      BIT 4: OVF
+        //      BIT 3: LP_VALID
+        //      BIT 2: LSR_FAULT
+        // 1. Check motion bit
+        data.motion = motion_reg & 0x80;
+        // 2. Check error and overflow bits
+        data.err = (motion_reg & 0x10) || !(motion_reg & 0x08) || (motion_reg & 0x04);
+        data.ovf = motion_reg & 0x10;
+        // 3. Parse delta X and Y
+        data.delta_x =
+            TOINT16((motion_data[PMW3610_X_L_POS] + ((motion_data[PMW3610_XY_H_POS] & 0xF0) << 4)), 12) / PMW3610_DEFAULT_CPI_DIVISOR;
+        data.delta_y =
+            TOINT16((motion_data[PMW3610_Y_L_POS] + ((motion_data[PMW3610_XY_H_POS] & 0x0F) << 8)), 12) / PMW3610_DEFAULT_CPI_DIVISOR;
+        // 4. Parse SQUAL
+        data.squal = static_cast<uint16_t>(motion_data[PMW3610_SQUAL_POS]) << 1;
+
+        return true;
+    }
+
+    return false;
+}
+
+/* PMW3610 Driver interrupt functions */
+// Interrupt service routine for pin-change interrupt
+IRAM_ATTR void PMW3610Driver::_intISR() {
+    if (_instance) {
+        // Set flag
+        _instance->_intPinLow = digitalRead(_instance->_irqPin) == LOW;
+        // #ifdef DEBUG
+        //     Serial.print("Interrupt detected! Pin state: ");
+        //     Serial.println(_instance->_intPinLow ? "LOW" : "HIGH");
+        // #endif
+        // Notify task
+        xTaskNotifyFromISR(_instance->_intTaskHandle, 0, eNoAction, NULL);
+    }
+}
+// Task to periodically update motion data if motion is detected
+//todo: add error handling on _motion_burst_parse
+void PMW3610Driver::_intTask(void *pvParameters) {
+    PMW3610Driver *driver = (PMW3610Driver *)pvParameters;
+    #ifdef DEBUG
+        Serial.println("Task started!");
+    #endif
+    while (true) {
+
+        // Wait for interrupt
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        #ifdef DEBUG
+            Serial.println("Task received ISR notification!");
+        #endif
+
+        // Check if the interrupt pin is low (motion detected)
+        while (driver->_intPinLow) {
+            // Read motion data & callback every Xms
+            driver->_motion_burst_parse();
+            // Call callback function
+            if (driver->_callback) {
+                driver->_callback();
+            }
+            // Delay
+            vTaskDelay(pdMS_TO_TICKS(PMW3610_MOTION_DATA_UPDATE_RATE_MS));
+        }
+
+        // If pin is high (no motion detected), update motion data once
+        // if (!driver->_intPinLow) {
+            driver->_motion_burst_parse();
+        // }
+
+    }
+}
+
 /* PMW3610 Driver public functions */
 
 bool PMW3610Driver::begin(int sckPin, int mosiMisoPin, int csPin, int irqPin, int resetPin) {
     #ifdef DEBUG
         Serial.println("Initializing PMW3610 sensor...");
     #endif
-    
-    _irqPin = irqPin;
-    pinMode(_irqPin, INPUT);
 
     // Step 1: Power up reset
     // Start SPI communication
@@ -522,6 +601,23 @@ bool PMW3610Driver::begin(int sckPin, int mosiMisoPin, int csPin, int irqPin, in
     if (!_configure()) {
         return false;
     }
+
+    // Step 5: Set up interrupt & start task
+    //todo: add error handling on interrupt & task setup
+    // Attach interrupt
+    _irqPin = irqPin;
+    pinMode(_irqPin, INPUT);
+    // attachInterrupt(digitalPinToInterrupt(_irqPin), std::bind(&PMW3610Driver::_intISR, this), CHANGE);
+    // attachInterrupt(digitalPinToInterrupt(_irqPin), &PMW3610Driver::_intISR, CHANGE);
+    
+    // Create task
+    BaseType_t xReturned;
+    xReturned = xTaskCreatePinnedToCore(_intTask, "PMW3610INTPinMonitor", PMW3610_TASK_STACK_SIZE, this, PMW3610_TASK_PRIORITY, &_intTaskHandle, PMW3610_TASK_CORE);
+    if (xReturned != pdPASS) {
+        Serial.println("Task creation failed!");
+        return false;
+    }
+
     #ifdef DEBUG
         Serial.println("PMW3610 sensor configured successfully!");
     #endif
@@ -529,15 +625,33 @@ bool PMW3610Driver::begin(int sckPin, int mosiMisoPin, int csPin, int irqPin, in
     return true;
 }
 
+void PMW3610Driver::linkInterrupt(std::function<void()> callback) {
+    //* Must be called before begin!
+    // Save callback function pointer
+    _callback = callback;
+}
+
+void PMW3610Driver::printData() {
+        Serial.print("{");
+        Serial.print("\"motion\": "); Serial.print(data.motion ? "true" : "false"); Serial.print(", ");
+        Serial.print("\"delta_x\": "); Serial.print(data.delta_x); Serial.print(", ");
+        Serial.print("\"delta_y\": "); Serial.print(data.delta_y); Serial.print(", ");
+        Serial.print("\"squal\": "); Serial.print(data.squal); Serial.print(", ");
+        Serial.print("\"error\": "); Serial.print(data.err ? "true" : "false"); Serial.print(", ");
+        Serial.print("\"overflow\": "); Serial.print(data.ovf ? "true" : "false");
+        Serial.println("}");
+}
+
+/* Testing functions */
+#ifdef DEBUG
+
 String PMW3610Driver::read_test() {
-
-   Serial.println(millis());
-
     // Read motion burst data
     uint8_t motion_data[PMW3610_BURST_SIZE];
 
     if (_motion_burst_read(motion_data, PMW3610_BURST_SIZE)) {
         // Print the motion data to the serial monitor
+        Serial.println(millis());
         Serial.println("Motion data:");
         Serial.print("\tMOTION:\t\t");
         Serial.println(motion_data[0], HEX);
@@ -573,6 +687,6 @@ String PMW3610Driver::read_test() {
 
         return String("{\"squal\": ") + String(motion_data[4]) + ", \"x\": " + String(raw_x) + ", \"y\": " + String(raw_y) + ", \"mot\": " + String(motion_data[0]) + "}";
     }
-
-
 }
+
+#endif

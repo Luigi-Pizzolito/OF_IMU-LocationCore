@@ -1,20 +1,51 @@
 #pragma once
 
-#include "pmw3610.h"
+#include "PMW3610.h"
 #include <Arduino.h>
+#include <FunctionalInterrupt.h>
+#include <iostream>
 
 // PMW3610 driver class, using bit-banged 3-wire SPI implementation
-#define DEBUG
 
+/* Class hard-configurations */
+#define PMW3610_MOTION_DATA_UPDATE_RATE_MS  5
+#define PMW3610_TASK_PRIORITY               1
+#define PMW3610_TASK_CORE                   1
+#define PMW3610_TASK_STACK_SIZE             2048
+
+#define DEBUG
 //todo: add smart algorithm for more surface compatability
 //todo: standarisize the output data with struct
+//todo: figure out motion interrupt handling
+//todo: add motion burst read & data output
 //todo: add frame data output
+//todo: add extended self-test
 
+// Struct to hold sensor data
+struct PMW3610Data {
+    bool motion;
+    uint16_t delta_x;
+    uint16_t delta_y;
+    uint16_t squal;
+    bool err;
+    bool ovf;
+};
+std::ostream &operator<<(std::ostream &os, const PMW3610Data &data);
+
+// PMW3610 driver class
 class PMW3610Driver {
 public:
     /* PMW3610 driver implementation */
+    PMW3610Driver();
+    PMW3610Data data;
     bool begin(int sckPin, int mosiMisoPin, int csPin, int irqPin, int resetPin);
-    String read_test();
+    void linkInterrupt(std::function<void()> callback = nullptr);
+
+    void printData();
+
+    #ifdef DEBUG
+        String read_test(); //? temporary test function
+    #endif
 
 private:
     /* Bit-banged 3-wire SPI implementation & functions */
@@ -45,5 +76,12 @@ private:
     bool _set_sample_time(uint8_t reg_addr, uint32_t sample_time);
     bool _configure();
 
+    std::function<void()> _callback;
+    TaskHandle_t _intTaskHandle = NULL;
+    volatile bool _intPinLow = false;
+    static PMW3610Driver *_instance;
+    static void IRAM_ATTR _intISR();
+    static void _intTask(void *pvParameters);
     bool _motion_burst_read(uint8_t *motion_data, size_t len);
+    bool _motion_burst_parse();
 };

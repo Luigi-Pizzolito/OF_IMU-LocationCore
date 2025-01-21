@@ -5,7 +5,7 @@
 // as datasheet does not provide much information
 
 /* Default configuration */
-#define PMW3610_DEFAULT_CPI                      800   // Counts per inch (CPI) (200-3200, in 200 steps)
+#define PMW3610_DEFAULT_CPI                     1600   // Counts per inch (CPI) (200-3200, in 200 steps)
 #define PMW3610_DEFAULT_CPI_DIVISOR                1   // CPI divisor for register value conversion (1-100)
 #define PMW3610_DEFAULT_PERFORMANCE             0x0D   // Mode: Normal, Vel_rate: 4ms, Poshi_rate: 4ms, Poslo_rate: 4ms
 #define PMW3610_DEFAULT_RUN_DOWNSHIFT_TIME_MS   500    // Run-mode downshift time in ms (13-3264), Time after which sensor goes from RUN to REST1 mode.
@@ -25,12 +25,14 @@
 #define PMW3610_MIN_CPI				 200
 #define PWM3610_MAX_SAMPLE_TIME_MS   2550
 #define PWM3610_MIN_SAMPLE_TIME_MS   10
-
+// Burst read register positions
 #define PMW3610_MAX_BURST_SIZE       10
-#define PMW3610_BURST_SIZE           10 //7
+#define PMW3610_BURST_SIZE           7      // 10 for debug, includes pixel min/avg/max
+#define PMW3610_MOTION_POS           0
 #define PMW3610_X_L_POS              1
 #define PMW3610_Y_L_POS              2
 #define PMW3610_XY_H_POS             3
+#define PMW3610_SQUAL_POS            4
 #define PMW3610_SHUTTER_H_POS        5
 #define PMW3610_SHUTTER_L_POS        6
 

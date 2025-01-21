@@ -16,10 +16,10 @@ PMW3610Driver::PMW3610Driver() {}
 
 void PMW3610Driver::_SPI_begin(int sckPin, int mosiMisoPin, int csPin, int resetPin, uint32_t spiSpeedDelayUs) {
     // Save configuration
-    _sckPin = sckPin;
-    _mosiMisoPin = mosiMisoPin;
-    _csPin = csPin;
-    _resetPin = resetPin;
+    _sckPin          = sckPin;
+    _mosiMisoPin     = mosiMisoPin;
+    _csPin           = csPin;
+    _resetPin        = resetPin;
     _spiSpeedDelayUs = spiSpeedDelayUs;
 
     // Initialize pins
@@ -38,26 +38,26 @@ void PMW3610Driver::_SPI__setPinModes() {
     digitalWrite(_resetPin, HIGH);  // Reset inactive
     digitalWrite(_sckPin, HIGH);    // Clock high idle
 
-    delay(PMW3610_WAKEUP_TIME_MS*5); // Wait for power to stabilize (50ms on initial power-up)
+    delay(PMW3610_WAKEUP_TIME_MS * 5);  // Wait for power to stabilize (50ms on initial power-up)
 }
 
 void PMW3610Driver::_SPI_reset() {
     // Reset the sensor
-    digitalWrite(_resetPin, LOW); // Activate reset
-    delayMicroseconds(PMW3610_RESET_HOLD_TIME_US); // Hold reset
-    digitalWrite(_resetPin, HIGH); // Deactivate reset
-    delay(PMW3610_WAKEUP_TIME_MS); // Wait for reset to complete
+    digitalWrite(_resetPin, LOW);                   // Activate reset
+    delayMicroseconds(PMW3610_RESET_HOLD_TIME_US);  // Hold reset
+    digitalWrite(_resetPin, HIGH);                  // Deactivate reset
+    delay(PMW3610_WAKEUP_TIME_MS);                  // Wait for reset to complete
 }
 
 void PMW3610Driver::_SPI__select() {
-    digitalWrite(_csPin, LOW); // Select
+    digitalWrite(_csPin, LOW);  // Select
     delayMicroseconds(PMW3610_NCS_SETUP_TIME_US);
 }
 
 void PMW3610Driver::_SPI__deselect() {
     delayMicroseconds(PMW3610_NCS_SETUP_TIME_US);
-    digitalWrite(_csPin, HIGH); // Deselect
-    digitalWrite(_sckPin, HIGH); // Clock high idle
+    digitalWrite(_csPin, HIGH);   // Deselect
+    digitalWrite(_sckPin, HIGH);  // Clock high idle
 }
 
 uint8_t PMW3610Driver::_SPI_read(uint8_t address) {
@@ -67,46 +67,46 @@ uint8_t PMW3610Driver::_SPI_read(uint8_t address) {
         return 0;
     }
     uint8_t data = 0;
-    address &= 0x7F; // Ensure MSB of the address is 0 for read operation
-    pinMode(_mosiMisoPin, OUTPUT); // Set MOSI/MISO as output to send address
+    address &= 0x7F;                // Ensure MSB of the address is 0 for read operation
+    pinMode(_mosiMisoPin, OUTPUT);  // Set MOSI/MISO as output to send address
     _SPI__select();
 
     // Send address, sensor reads on low to high CLK transition
     for (int i = 0; i < 8; i++) {
-        digitalWrite(_sckPin, LOW);                 // Clock low
-        delayMicroseconds(_spiSpeedDelayUs);        // Clock half-cycle delay
+        digitalWrite(_sckPin, LOW);           // Clock low
+        delayMicroseconds(_spiSpeedDelayUs);  // Clock half-cycle delay
 
-                                                    // Shift-out address
-        digitalWrite(_mosiMisoPin, (address & 0x80) ? HIGH : LOW); // Write MSB first
+        // Shift-out address
+        digitalWrite(_mosiMisoPin, (address & 0x80) ? HIGH : LOW);  // Write MSB first
         address <<= 1;
 
-        digitalWrite(_sckPin, HIGH);                // Clock high
-        delayMicroseconds(_spiSpeedDelayUs);        // Clock half-cycle delay
+        digitalWrite(_sckPin, HIGH);          // Clock high
+        delayMicroseconds(_spiSpeedDelayUs);  // Clock half-cycle delay
     }
 
-    pinMode(_mosiMisoPin, INPUT); // Set MOSI/MISO as input to read data
-    
-    delayMicroseconds(PMW3610_HANDOVER_TIME_US); // Handover delay
+    pinMode(_mosiMisoPin, INPUT);  // Set MOSI/MISO as input to read data
+
+    delayMicroseconds(PMW3610_HANDOVER_TIME_US);  // Handover delay
 
     // Read data, sensor sends on high to low CLK transition, read on low to high CLK transition
     for (int i = 0; i < 8; i++) {
         data <<= 1;
-        digitalWrite(_sckPin, LOW);                 // Clock low
-        delayMicroseconds(_spiSpeedDelayUs);        // Clock half-cycle delay
+        digitalWrite(_sckPin, LOW);           // Clock low
+        delayMicroseconds(_spiSpeedDelayUs);  // Clock half-cycle delay
 
-        if (digitalRead(_mosiMisoPin)) {            // Shift-in read data
+        if (digitalRead(_mosiMisoPin)) {  // Shift-in read data
             data |= 0x01;
         }
 
-        digitalWrite(_sckPin, HIGH);                // Clock high
-        delayMicroseconds(_spiSpeedDelayUs);        // Clock half-cycle delay
+        digitalWrite(_sckPin, HIGH);          // Clock high
+        delayMicroseconds(_spiSpeedDelayUs);  // Clock half-cycle delay
     }
 
     _SPI__deselect();
-    delayMicroseconds(PMW3610_HOLD_TIME_US); // Hold time after a read operation
-    pinMode(_mosiMisoPin, OUTPUT); // Set MOSI/MISO back to output
+    delayMicroseconds(PMW3610_HOLD_TIME_US);  // Hold time after a read operation
+    pinMode(_mosiMisoPin, OUTPUT);            // Set MOSI/MISO back to output
 
-    delayMicroseconds(PMW3610_INTERREAD_TIME_US); // Inter-command read minimum delay
+    delayMicroseconds(PMW3610_INTERREAD_TIME_US);  // Inter-command read minimum delay
 
     return data;
 }
@@ -117,40 +117,40 @@ void PMW3610Driver::__SPI_write(uint8_t address, uint8_t data) {
         Serial.println("Invalid address for write operation!");
         return;
     }
-    address |= 0x80; // Ensure MSB of the address is 1 for write operation
-    pinMode(_mosiMisoPin, OUTPUT); // Set MOSI/MISO as output to send address and data
+    address |= 0x80;                // Ensure MSB of the address is 1 for write operation
+    pinMode(_mosiMisoPin, OUTPUT);  // Set MOSI/MISO as output to send address and data
     _SPI__select();
 
     // Send address, sensor reads on low to high CLK transition
     for (int i = 0; i < 8; i++) {
-        digitalWrite(_sckPin, LOW);                 // Clock low
-        delayMicroseconds(_spiSpeedDelayUs);        // Clock half-cycle delay
+        digitalWrite(_sckPin, LOW);           // Clock low
+        delayMicroseconds(_spiSpeedDelayUs);  // Clock half-cycle delay
 
-                                                    // Shift-out address
-        digitalWrite(_mosiMisoPin, (address & 0x80) ? HIGH : LOW); // Write MSB first
+        // Shift-out address
+        digitalWrite(_mosiMisoPin, (address & 0x80) ? HIGH : LOW);  // Write MSB first
         address <<= 1;
 
-        digitalWrite(_sckPin, HIGH);                // Clock high
-        delayMicroseconds(_spiSpeedDelayUs);        // Clock half-cycle delay
+        digitalWrite(_sckPin, HIGH);          // Clock high
+        delayMicroseconds(_spiSpeedDelayUs);  // Clock half-cycle delay
     }
 
     // Send data, sensor reads on low to high CLK transition
     for (int i = 0; i < 8; i++) {
-        digitalWrite(_sckPin, LOW);                 // Clock low
-        delayMicroseconds(_spiSpeedDelayUs);        // Clock half-cycle delay
-        
-                                                    // Shift-out write data
-        digitalWrite(_mosiMisoPin, (data & 0x80) ? HIGH : LOW); // Write MSB first
+        digitalWrite(_sckPin, LOW);           // Clock low
+        delayMicroseconds(_spiSpeedDelayUs);  // Clock half-cycle delay
+
+        // Shift-out write data
+        digitalWrite(_mosiMisoPin, (data & 0x80) ? HIGH : LOW);  // Write MSB first
         data <<= 1;
 
-        digitalWrite(_sckPin, HIGH);                // Clock high
-        delayMicroseconds(_spiSpeedDelayUs);        // Clock half-cycle delay
+        digitalWrite(_sckPin, HIGH);          // Clock high
+        delayMicroseconds(_spiSpeedDelayUs);  // Clock half-cycle delay
     }
 
-    delayMicroseconds(PMW3610_HOLD_TIME_US*10); // Hold time after a write operation
+    delayMicroseconds(PMW3610_HOLD_TIME_US * 10);  // Hold time after a write operation
     _SPI__deselect();
 
-    delayMicroseconds(PMW3610_INTERWRITE_TIME_US); // Inter-command write minimum delay
+    delayMicroseconds(PMW3610_INTERWRITE_TIME_US);  // Inter-command write minimum delay
 }
 
 void PMW3610Driver::_SPI_write(uint8_t address, uint8_t data) {
@@ -199,7 +199,7 @@ bool PMW3610Driver::_check_product_id() {
 
 bool PMW3610Driver::_self_test() {
     // Perform self-test
-    
+
     // Step 1: Clear observation register (OB1)
     _SPI_write(PMW3610_REG_OBSERVATION, 0x00);
 
@@ -210,7 +210,7 @@ bool PMW3610Driver::_self_test() {
     // Step 2: Check observation register (OB1)
     uint8_t observation = _SPI_read(PMW3610_REG_OBSERVATION);
     // passed if lower nibble is all set
-    if ( (observation & 0x0F) != 0x0F ) {
+    if ((observation & 0x0F) != 0x0F) {
         Serial.println("PMW3610 self-test failed!");
         Serial.print("Observation register: ");
         Serial.println(observation, HEX);
@@ -257,17 +257,17 @@ bool PMW3610Driver::_set_cpi(uint32_t cpi) {
 
     // Convert CPI to register value
     uint8_t cpiReg = (cpi / 200);
-    #ifdef DEBUG
-        Serial.print("Setting CPI to ");
-        Serial.print(cpi);
-        Serial.print(" cpi (register value: ");
-        Serial.print(cpiReg, HEX);
-        Serial.println(")");
-    #endif
+#ifdef DEBUG
+    Serial.print("Setting CPI to ");
+    Serial.print(cpi);
+    Serial.print(" cpi (register value: ");
+    Serial.print(cpiReg, HEX);
+    Serial.println(")");
+#endif
 
     // Set CPI
     uint8_t addresses[] = {PMW3610_REG_SPI_PAGE0, PMW3610_REG_RES_STEP, PMW3610_REG_SPI_PAGE0};
-    uint8_t datas[] = {0xFF, cpiReg, 0x00};
+    uint8_t datas[]     = {0xFF, cpiReg, 0x00};
     _SPI_write_burst(addresses, datas, sizeof(addresses));
 
     return true;
@@ -284,25 +284,25 @@ bool PMW3610Driver::_set_downshift_time(uint8_t reg_addr, uint32_t downshift_tim
     switch (reg_addr) {
         case PMW3610_REG_RUN_DOWNSHIFT:
             /*
-            * Run downshift time = PMW3610_REG_RUN_DOWNSHIFT
-            *                      * 8 * pos-rate (fixed to 4ms)
-            */
+             * Run downshift time = PMW3610_REG_RUN_DOWNSHIFT
+             *                      * 8 * pos-rate (fixed to 4ms)
+             */
             max_time = 32 * 255;
             min_time = 32;
             break;
         case PMW3610_REG_REST1_DOWNSHIFT:
             /*
-            * Rest1 downshift time = PMW3610_REG_RUN_DOWNSHIFT
-            *                        * 16 * Rest1_sample_period (default 40 ms)
-            */
+             * Rest1 downshift time = PMW3610_REG_RUN_DOWNSHIFT
+             *                        * 16 * Rest1_sample_period (default 40 ms)
+             */
             max_time = 255 * 16 * PMW3610_DEFAULT_REST1_SAMPLE_TIME_MS;
             min_time = 16 * PMW3610_DEFAULT_REST1_SAMPLE_TIME_MS;
             break;
         case PMW3610_REG_REST2_DOWNSHIFT:
             /*
-            * Rest2 downshift time = PMW3610_REG_REST2_DOWNSHIFT
-            *                        * 128 * Rest2 rate (default 100 ms)
-            */
+             * Rest2 downshift time = PMW3610_REG_REST2_DOWNSHIFT
+             *                        * 128 * Rest2 rate (default 100 ms)
+             */
             max_time = 255 * 128 * PMW3610_DEFAULT_REST2_SAMPLE_TIME_MS;
             min_time = 128 * PMW3610_DEFAULT_REST2_SAMPLE_TIME_MS;
             break;
@@ -312,9 +312,8 @@ bool PMW3610Driver::_set_downshift_time(uint8_t reg_addr, uint32_t downshift_tim
     }
 
     // Check bounds
-    if ( ( (downshift_time > max_time) || (downshift_time < min_time) ) ||
-         !( (min_time > 0) && (max_time / min_time <= UINT8_MAX) )
-    ) {
+    if (((downshift_time > max_time) || (downshift_time < min_time)) ||
+        !((min_time > 0) && (max_time / min_time <= UINT8_MAX))) {
         Serial.print("Requested invalid downshift time for reg [");
         Serial.print(reg_addr, HEX);
         Serial.print("]: ");
@@ -328,15 +327,15 @@ bool PMW3610Driver::_set_downshift_time(uint8_t reg_addr, uint32_t downshift_tim
 
     // Convert downshift time to register value
     uint8_t downshift_time_reg = (downshift_time / min_time);
-    #ifdef DEBUG
-        Serial.print("Setting downshift time for reg [");
-        Serial.print(reg_addr, HEX);
-        Serial.print("] to ");
-        Serial.print(downshift_time);
-        Serial.print(" ms (register value: ");
-        Serial.print(downshift_time_reg, HEX);
-        Serial.println(")");
-    #endif
+#ifdef DEBUG
+    Serial.print("Setting downshift time for reg [");
+    Serial.print(reg_addr, HEX);
+    Serial.print("] to ");
+    Serial.print(downshift_time);
+    Serial.print(" ms (register value: ");
+    Serial.print(downshift_time_reg, HEX);
+    Serial.println(")");
+#endif
 
     // Set downshift time
     _SPI_write(reg_addr, downshift_time_reg);
@@ -364,15 +363,15 @@ bool PMW3610Driver::_set_sample_time(uint8_t reg_addr, uint32_t sample_time) {
 
     // Convert sample time to register value
     uint8_t sample_time_reg = (sample_time / PWM3610_MIN_SAMPLE_TIME_MS);
-    #ifdef DEBUG
-        Serial.print("Setting sample time for reg [");
-        Serial.print(reg_addr, HEX);
-        Serial.print("] to ");
-        Serial.print(sample_time);
-        Serial.print(" ms (register value: ");
-        Serial.print(sample_time_reg, HEX);
-        Serial.println(")");
-    #endif
+#ifdef DEBUG
+    Serial.print("Setting sample time for reg [");
+    Serial.print(reg_addr, HEX);
+    Serial.print("] to ");
+    Serial.print(sample_time);
+    Serial.print(" ms (register value: ");
+    Serial.print(sample_time_reg, HEX);
+    Serial.println(")");
+#endif
 
     // Set sample time
     _SPI_write(reg_addr, sample_time_reg);
@@ -410,21 +409,21 @@ bool PMW3610Driver::_configure() {
     if (!_set_downshift_time(PMW3610_REG_REST1_DOWNSHIFT, PMW3610_DEFAULT_REST1_DOWNSHIFT_TIME_MS)) {
         return false;
     }
-    #if PMW3610_DEFAULT_REST2_DOWNSHIFT_TIME_MS > 0
-        if (!_set_downshift_time(PMW3610_REG_REST2_DOWNSHIFT, PMW3610_DEFAULT_REST2_DOWNSHIFT_TIME_MS)) {
-            return false;
-        }
-    #endif
-    #if PMW3610_DEFAULT_REST2_SAMPLE_TIME_MS >= 10
-        if (!_set_sample_time(PMW3610_REG_REST2_PERIOD, PMW3610_DEFAULT_REST2_SAMPLE_TIME_MS)) {
-            return false;
-        }
-    #endif
-    #if PMW3610_DEFAULT_REST3_SAMPLE_TIME_MS >= 10
-        if (!_set_sample_time(PMW3610_REG_REST3_PERIOD, PMW3610_DEFAULT_REST3_SAMPLE_TIME_MS)) {
-            return false;
-        }
-    #endif
+#if PMW3610_DEFAULT_REST2_DOWNSHIFT_TIME_MS > 0
+    if (!_set_downshift_time(PMW3610_REG_REST2_DOWNSHIFT, PMW3610_DEFAULT_REST2_DOWNSHIFT_TIME_MS)) {
+        return false;
+    }
+#endif
+#if PMW3610_DEFAULT_REST2_SAMPLE_TIME_MS >= 10
+    if (!_set_sample_time(PMW3610_REG_REST2_PERIOD, PMW3610_DEFAULT_REST2_SAMPLE_TIME_MS)) {
+        return false;
+    }
+#endif
+#if PMW3610_DEFAULT_REST3_SAMPLE_TIME_MS >= 10
+    if (!_set_sample_time(PMW3610_REG_REST3_PERIOD, PMW3610_DEFAULT_REST3_SAMPLE_TIME_MS)) {
+        return false;
+    }
+#endif
 
     return true;
 }
@@ -440,27 +439,27 @@ bool PMW3610Driver::_motion_burst_read(uint8_t *motion_data, size_t len) {
     }
 
     // Read motion burst data
-    pinMode(_mosiMisoPin, OUTPUT); // Set MOSI/MISO as output to send address
+    pinMode(_mosiMisoPin, OUTPUT);  // Set MOSI/MISO as output to send address
     _SPI__select();
 
     // Send motion burst address
-    uint8_t address = PMW3610_REG_MOTION_BURST & 0x7F; // Ensure MSB of the address is 0 for read operation
+    uint8_t address = PMW3610_REG_MOTION_BURST & 0x7F;  // Ensure MSB of the address is 0 for read operation
     // Send address, sensor reads on low to high CLK transition
     for (int i = 0; i < 8; i++) {
-        digitalWrite(_sckPin, LOW);                 // Clock low
-        delayMicroseconds(_spiSpeedDelayUs);        // Clock half-cycle delay
+        digitalWrite(_sckPin, LOW);           // Clock low
+        delayMicroseconds(_spiSpeedDelayUs);  // Clock half-cycle delay
 
-                                                    // Shift-out address
-        digitalWrite(_mosiMisoPin, (address & 0x80) ? HIGH : LOW); // Write MSB first
+        // Shift-out address
+        digitalWrite(_mosiMisoPin, (address & 0x80) ? HIGH : LOW);  // Write MSB first
         address <<= 1;
 
-        digitalWrite(_sckPin, HIGH);                // Clock high
-        delayMicroseconds(_spiSpeedDelayUs);        // Clock half-cycle delay
+        digitalWrite(_sckPin, HIGH);          // Clock high
+        delayMicroseconds(_spiSpeedDelayUs);  // Clock half-cycle delay
     }
 
-    pinMode(_mosiMisoPin, INPUT); // Set MOSI/MISO as input to read data
-    
-    delayMicroseconds(PMW3610_HANDOVER_TIME_US); // Handover delay
+    pinMode(_mosiMisoPin, INPUT);  // Set MOSI/MISO as input to read data
+
+    delayMicroseconds(PMW3610_HANDOVER_TIME_US);  // Handover delay
 
     // Read motion burst data
     for (size_t i = 0; i < len; i++) {
@@ -468,23 +467,23 @@ bool PMW3610Driver::_motion_burst_read(uint8_t *motion_data, size_t len) {
         // Read data, sensor sends on high to low CLK transition, read on low to high CLK transition
         for (int j = 0; j < 8; j++) {
             motion_data[i] <<= 1;
-            digitalWrite(_sckPin, LOW);                 // Clock low
-            delayMicroseconds(_spiSpeedDelayUs);        // Clock half-cycle delay
+            digitalWrite(_sckPin, LOW);           // Clock low
+            delayMicroseconds(_spiSpeedDelayUs);  // Clock half-cycle delay
 
-            if (digitalRead(_mosiMisoPin)) {            // Shift-in read data
+            if (digitalRead(_mosiMisoPin)) {  // Shift-in read data
                 motion_data[i] |= 0x01;
             }
 
-            digitalWrite(_sckPin, HIGH);                // Clock high
-            delayMicroseconds(_spiSpeedDelayUs);        // Clock half-cycle delay
+            digitalWrite(_sckPin, HIGH);          // Clock high
+            delayMicroseconds(_spiSpeedDelayUs);  // Clock half-cycle delay
         }
     }
 
     _SPI__deselect();
-    delayMicroseconds(PMW3610_HOLD_TIME_US); // Hold time after a read operation
-    pinMode(_mosiMisoPin, OUTPUT); // Set MOSI/MISO back to output
+    delayMicroseconds(PMW3610_HOLD_TIME_US);  // Hold time after a read operation
+    pinMode(_mosiMisoPin, OUTPUT);            // Set MOSI/MISO back to output
 
-    delayMicroseconds(PMW3610_INTERREAD_TIME_US); // Inter-command read minimum delay
+    delayMicroseconds(PMW3610_INTERREAD_TIME_US);  // Inter-command read minimum delay
 
     return true;
 }
@@ -536,21 +535,20 @@ IRAM_ATTR void PMW3610Driver::_intISR() {
 }
 #endif
 // Task to periodically update motion data if motion is detected
-//todo: add error handling on _motion_burst_parse
+// todo: add error handling on _motion_burst_parse
 void PMW3610Driver::_intTask(void *pvParameters) {
     PMW3610Driver *driver = (PMW3610Driver *)pvParameters;
-    #ifdef DEBUG
-        Serial.println("Task started!");
-    #endif
+#ifdef DEBUG
+    Serial.println("PMW3610 update task started!");
+#endif
 
     while (true) {
-
-        #if PMW3610_USE_PIN_ISR
-            // Wait for interrupt
-            ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-            #ifdef DEBUG
-                Serial.println("Task received ISR notification!");
-            #endif
+#if PMW3610_USE_PIN_ISR
+        // Wait for interrupt
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+#    ifdef DEBUG
+        Serial.println("PMW3610 update task received ISR notification!");
+#    endif
 
         // Check if the interrupt pin is low (motion detected)
         while (driver->_intPinLow) {
@@ -562,27 +560,25 @@ void PMW3610Driver::_intTask(void *pvParameters) {
 
         // If pin is high (no motion detected), update motion data once
         // if (!driver->_intPinLow) {
-            driver->_motion_burst_parse();
+        driver->_motion_burst_parse();
         // }
 
-        #else
-            // Read motion data every Xms, always
-            driver->_motion_burst_parse();
-            
-            // Delay
-            vTaskDelay(pdMS_TO_TICKS(PMW3610_MOTION_DATA_UPDATE_RATE_MS));
-        #endif
+#else
+        // Read motion data every Xms, always
+        driver->_motion_burst_parse();
 
+        // Delay
+        vTaskDelay(pdMS_TO_TICKS(PMW3610_MOTION_DATA_UPDATE_RATE_MS));
+#endif
     }
-
 }
 
 /* PMW3610 Driver public functions */
 
 bool PMW3610Driver::begin(int sckPin, int mosiMisoPin, int csPin, int irqPin, int resetPin) {
-    #ifdef DEBUG
-        Serial.println("Initializing PMW3610 sensor...");
-    #endif
+#ifdef DEBUG
+    Serial.println("Initializing PMW3610 sensor...");
+#endif
 
     // Step 1: Power up reset
     // Start SPI communication
@@ -595,108 +591,70 @@ bool PMW3610Driver::begin(int sckPin, int mosiMisoPin, int csPin, int irqPin, in
     if (!_check_product_id()) {
         return false;
     }
-    #ifdef DEBUG
-        Serial.println("PMW3610 product ID and revision ID match!");
-    #endif
+#ifdef DEBUG
+    Serial.println("PMW3610 product ID and revision ID match!");
+#endif
 
     // Step 2: Perform self-test
     if (!_self_test()) {
         return false;
     }
-    #ifdef DEBUG
-        Serial.println("PMW3610 self-test passed!");
-    #endif
+#ifdef DEBUG
+    Serial.println("PMW3610 self-test passed!");
+#endif
 
-    // Step 4: Configure sensor
-    #ifdef DEBUG
-        Serial.println("Configuring PMW3610 sensor...");
-    #endif
+// Step 4: Configure sensor
+#ifdef DEBUG
+    Serial.println("Configuring PMW3610 sensor...");
+#endif
     if (!_configure()) {
         return false;
     }
 
     // Step 5: Set up interrupt & start task
-    //todo: add error handling on interrupt & task setup
+    // todo: add error handling on interrupt & task setup
     // Setup interrupt pin
     _irqPin = irqPin;
     pinMode(_irqPin, INPUT);
-    #if PMW3610_USE_PIN_ISR
-        // Attach interrupt
-        // attachInterrupt(digitalPinToInterrupt(_irqPin), std::bind(&PMW3610Driver::_intISR, this), CHANGE);
-        attachInterrupt(digitalPinToInterrupt(_irqPin), &PMW3610Driver::_intISR, CHANGE);
-    #endif
-    
+#if PMW3610_USE_PIN_ISR
+    // Attach interrupt
+    // attachInterrupt(digitalPinToInterrupt(_irqPin), std::bind(&PMW3610Driver::_intISR, this), CHANGE);
+    attachInterrupt(digitalPinToInterrupt(_irqPin), &PMW3610Driver::_intISR, CHANGE);
+#endif
+
     // Create task
     BaseType_t xReturned;
     xReturned = xTaskCreatePinnedToCore(_intTask, "PMW3610INTPinMonitor", PMW3610_TASK_STACK_SIZE, this, PMW3610_TASK_PRIORITY, &_intTaskHandle, PMW3610_TASK_CORE);
     if (xReturned != pdPASS) {
-        Serial.println("Task creation failed!");
+        Serial.println("PMW3610 update task creation failed!");
         return false;
     }
 
-    #ifdef DEBUG
-        Serial.println("PMW3610 sensor configured successfully!");
-    #endif
+#ifdef DEBUG
+    Serial.println("PMW3610 sensor configured successfully!");
+#endif
 
     return true;
 }
 
 void PMW3610Driver::printData() {
-        Serial.print("{");
-        Serial.print("\"motion\": "); Serial.print(data.motion ? "true" : "false"); Serial.print(", ");
-        Serial.print("\"delta_x\": "); Serial.print(data.delta_x); Serial.print(", ");
-        Serial.print("\"delta_y\": "); Serial.print(data.delta_y); Serial.print(", ");
-        Serial.print("\"squal\": "); Serial.print(data.squal); Serial.print(", ");
-        Serial.print("\"error\": "); Serial.print(data.err ? "true" : "false"); Serial.print(", ");
-        Serial.print("\"overflow\": "); Serial.print(data.ovf ? "true" : "false");
-        Serial.println("}");
+    Serial.print("{");
+    Serial.print("\"motion\": ");
+    Serial.print(data.motion ? "true" : "false");
+    Serial.print(", ");
+    Serial.print("\"delta_x\": ");
+    Serial.print(data.delta_x);
+    Serial.print(", ");
+    Serial.print("\"delta_y\": ");
+    Serial.print(data.delta_y);
+    Serial.print(", ");
+    Serial.print("\"squal\": ");
+    Serial.print(data.squal);
+    Serial.print(", ");
+    Serial.print("\"error\": ");
+    Serial.print(data.err ? "true" : "false");
+    Serial.print(", ");
+    Serial.print("\"overflow\": ");
+    Serial.print(data.ovf ? "true" : "false");
+    Serial.println("}");
 }
-
-/* Testing functions */
-#ifdef DEBUG
-
-String PMW3610Driver::read_test() {
-    // Read motion burst data
-    uint8_t motion_data[PMW3610_BURST_SIZE];
-
-    if (_motion_burst_read(motion_data, PMW3610_BURST_SIZE)) {
-        // Print the motion data to the serial monitor
-        Serial.println(millis());
-        Serial.println("Motion data:");
-        Serial.print("\tMOTION:\t\t");
-        Serial.println(motion_data[0], HEX);
-        Serial.print("\tDELTA_X_L:\t");
-        Serial.println(motion_data[1], HEX);
-        Serial.print("\tDELTA_Y_L:\t");
-        Serial.println(motion_data[2], HEX);
-        Serial.print("\tDELTA_XY_H:\t");
-        Serial.println(motion_data[3], HEX);
-        Serial.print("\tSQUAL:\t\t");
-        Serial.println(motion_data[4]);
-        Serial.print("\tSHUTTER:\t");
-        Serial.println(static_cast<uint16_t>((motion_data[5] << 8) | motion_data[6]));
-        Serial.print("\tPIX_MAX:\t");
-        Serial.println(motion_data[7]);
-        Serial.print("\tPIX_AVG:\t");
-        Serial.println(motion_data[8]);
-        Serial.print("\tPIX_MIN:\t");
-        Serial.println(motion_data[9]);
-
-        // Parse motion data
-        int16_t raw_x =
-        TOINT16((motion_data[PMW3610_X_L_POS] + ((motion_data[PMW3610_XY_H_POS] & 0xF0) << 4)), 12) / PMW3610_DEFAULT_CPI_DIVISOR;
-        int16_t raw_y =
-            TOINT16((motion_data[PMW3610_Y_L_POS] + ((motion_data[PMW3610_XY_H_POS] & 0x0F) << 8)), 12) / PMW3610_DEFAULT_CPI_DIVISOR;
-
-        // Print the parsed motion data to the serial monitor
-        Serial.print("Parsed motion data: ");
-        Serial.print("X: ");
-        Serial.print(raw_x);
-        Serial.print(", Y: ");
-        Serial.println(raw_y);
-
-        return String("{\"squal\": ") + String(motion_data[4]) + ", \"x\": " + String(raw_x) + ", \"y\": " + String(raw_y) + ", \"mot\": " + String(motion_data[0]) + "}";
-    }
-}
-
-#endif

@@ -4,12 +4,12 @@
 #include <esp_wifi.h>
 #include <QuickEspNow.h>
 
-void dataReceived (uint8_t* address, uint8_t* data, uint8_t len, signed int rssi, bool broadcast) {
-    Serial.print ("Received: ");
-    Serial.printf ("%.*s\n", len, data);
-    Serial.printf ("RSSI: %d dBm\n", rssi);
-    Serial.printf ("From: " MACSTR "\n", MAC2STR (address));
-    Serial.printf ("%s\n", broadcast ? "Broadcast" : "Unicast");
+void dataReceived(uint8_t* address, uint8_t* data, uint8_t len, signed int rssi, bool broadcast) {
+    Serial.print("Received: ");
+    Serial.printf("%.*s\n", len, data);
+    Serial.printf("RSSI: %d dBm\n", rssi);
+    Serial.printf("From: " MACSTR "\n", MAC2STR(address));
+    Serial.printf("%s\n", broadcast ? "Broadcast" : "Unicast");
 }
 
 static const String msg = "Hello ESP-NOW!";

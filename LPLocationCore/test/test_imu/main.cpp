@@ -25,31 +25,23 @@
  */
 ICM20948_WE myIMU = ICM20948_WE(ICM20948_ADDR);
 
-void setup()
-{
+void setup() {
     // delay(2000); // maybe needed for some MCUs, in particular for startup after power off
-    Wire.begin(5, 4); // SDA, SCL
+    Wire.begin(5, 4);  // SDA, SCL
     Serial.begin(115200);
-    while (!Serial)
-    {
+    while (!Serial) {
     }
     delay(2000);
 
-    if (!myIMU.init())
-    {
+    if (!myIMU.init()) {
         Serial.println("ICM20948 does not respond");
-    }
-    else
-    {
+    } else {
         Serial.println("ICM20948 is connected");
     }
 
-    if (!myIMU.initMagnetometer())
-    {
+    if (!myIMU.initMagnetometer()) {
         Serial.println("Magnetometer does not respond");
-    }
-    else
-    {
+    } else {
         Serial.println("Magnetometer is connected");
     }
 
@@ -194,11 +186,10 @@ void setup()
      * AK09916_CONT_MODE_100HZ   Continuous measurements, 100 Hz rate (default)
      */
     myIMU.setMagOpMode(AK09916_CONT_MODE_20HZ);
-    delay(50); // add a delay of 1000/magRate to avoid first mag value being zero
+    delay(50);  // add a delay of 1000/magRate to avoid first mag value being zero
 }
 
-void loop()
-{
+void loop() {
     xyzFloat gValue;
     xyzFloat gyr;
     xyzFloat magValue;
@@ -207,7 +198,7 @@ void loop()
     myIMU.getGValues(&gValue);
     myIMU.getGyrValues(&gyr);
     myIMU.getMagValues(&magValue);
-    float temp = myIMU.getTemperature();
+    float temp       = myIMU.getTemperature();
     float resultantG = myIMU.getResultantG(&gValue);
 
     Serial.println("Acceleration in g (x,y,z):");
@@ -238,5 +229,5 @@ void loop()
 
     Serial.println("********************************************");
 
-    delay(1000/20); // 20 Hz
+    delay(1000 / 20);  // 20 Hz
 }

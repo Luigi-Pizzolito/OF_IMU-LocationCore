@@ -1,0 +1,18 @@
+﻿---
+BasedOnStyle: Google
+AlignAfterOpenBracket: Align
+AlignOperands: 'true'
+AlignTrailingComments: 'true'
+AllowShortFunctionsOnASingleLine: Inline
+BinPackArguments: 'true'
+BinPackParameters: 'true'
+BreakBeforeBraces: Attach
+IndentWidth: '4'
+SortIncludes: 'false'
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true
+AlwaysBreakAfterReturnType: None
+ColumnLimit: 0
+IndentPPDirectives: AfterHash
+
+...

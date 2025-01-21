@@ -16,15 +16,15 @@
 #define PMW3610_DEFAULT_REST3_SAMPLE_TIME_MS    300    // Rest3-mode sample time in ms (10-2550), REST3 mode sample time in ms.
 
 /* Sensor hard-coded config values */
-#define PMW3610_PRODUCT_ID           0x3E
-#define PMW3610_REVISION_ID          0x01
-#define PMW3610_POWERUP_CMD_RESET    0x5A
-#define PMW3610_SPI_CLOCK_CMD_ENABLE   0xBA
-#define PMW3610_SPI_CLOCK_CMD_DISABLE  0xB5
-#define PMW3610_MAX_CPI				 3200
-#define PMW3610_MIN_CPI				 200
-#define PWM3610_MAX_SAMPLE_TIME_MS   2550
-#define PWM3610_MIN_SAMPLE_TIME_MS   10
+#define PMW3610_PRODUCT_ID              0x3E
+#define PMW3610_REVISION_ID             0x01
+#define PMW3610_POWERUP_CMD_RESET       0x5A
+#define PMW3610_SPI_CLOCK_CMD_ENABLE    0xBA
+#define PMW3610_SPI_CLOCK_CMD_DISABLE   0xB5
+#define PMW3610_MAX_CPI				    3200
+#define PMW3610_MIN_CPI				    200
+#define PWM3610_MAX_SAMPLE_TIME_MS      2550
+#define PWM3610_MIN_SAMPLE_TIME_MS      10
 // Burst read register positions
 #define PMW3610_MAX_BURST_SIZE       10
 #define PMW3610_BURST_SIZE           7      // 10 for debug, includes pixel min/avg/max

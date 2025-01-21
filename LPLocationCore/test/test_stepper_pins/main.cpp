@@ -11,49 +11,49 @@
 #define STEPPER_ENABLE 48
 
 void setup() {
-  // Initialize all pins as outputs
-  pinMode(STEPPER_L1_STEP, OUTPUT);
-  pinMode(STEPPER_L1_DIR, OUTPUT);
-  pinMode(STEPPER_L2_STEP, OUTPUT);
-  pinMode(STEPPER_L2_DIR, OUTPUT);
-  pinMode(STEPPER_R1_STEP, OUTPUT);
-  pinMode(STEPPER_R1_DIR, OUTPUT);
-  pinMode(STEPPER_R2_STEP, OUTPUT);
-  pinMode(STEPPER_R2_DIR, OUTPUT);
-  pinMode(STEPPER_ENABLE, OUTPUT);
+    // Initialize all pins as outputs
+    pinMode(STEPPER_L1_STEP, OUTPUT);
+    pinMode(STEPPER_L1_DIR, OUTPUT);
+    pinMode(STEPPER_L2_STEP, OUTPUT);
+    pinMode(STEPPER_L2_DIR, OUTPUT);
+    pinMode(STEPPER_R1_STEP, OUTPUT);
+    pinMode(STEPPER_R1_DIR, OUTPUT);
+    pinMode(STEPPER_R2_STEP, OUTPUT);
+    pinMode(STEPPER_R2_DIR, OUTPUT);
+    pinMode(STEPPER_ENABLE, OUTPUT);
 
-  // Set all pins low before starting
-  digitalWrite(STEPPER_L1_STEP, LOW);
-  digitalWrite(STEPPER_L1_DIR, LOW);
-  digitalWrite(STEPPER_L2_STEP, LOW);
-  digitalWrite(STEPPER_L2_DIR, LOW);
-  digitalWrite(STEPPER_R1_STEP, LOW);
-  digitalWrite(STEPPER_R1_DIR, LOW);
-  digitalWrite(STEPPER_R2_STEP, LOW);
-  digitalWrite(STEPPER_R2_DIR, LOW);
-  digitalWrite(STEPPER_ENABLE, LOW);
+    // Set all pins low before starting
+    digitalWrite(STEPPER_L1_STEP, LOW);
+    digitalWrite(STEPPER_L1_DIR, LOW);
+    digitalWrite(STEPPER_L2_STEP, LOW);
+    digitalWrite(STEPPER_L2_DIR, LOW);
+    digitalWrite(STEPPER_R1_STEP, LOW);
+    digitalWrite(STEPPER_R1_DIR, LOW);
+    digitalWrite(STEPPER_R2_STEP, LOW);
+    digitalWrite(STEPPER_R2_DIR, LOW);
+    digitalWrite(STEPPER_ENABLE, LOW);
 
-  // Set each pin high sequentially with 5ms delay
-  delay(5);
-  digitalWrite(STEPPER_L1_STEP, HIGH);
-  delay(5);
-  digitalWrite(STEPPER_L1_DIR, HIGH);
-  delay(5);
-  digitalWrite(STEPPER_L2_STEP, HIGH);
-  delay(5);
-  digitalWrite(STEPPER_L2_DIR, HIGH);
-  delay(5);
-  digitalWrite(STEPPER_R1_STEP, HIGH);
-  delay(5);
-  digitalWrite(STEPPER_R1_DIR, HIGH);
-  delay(5);
-  digitalWrite(STEPPER_R2_STEP, HIGH);
-  delay(5);
-  digitalWrite(STEPPER_R2_DIR, HIGH);
-  delay(5);
-  digitalWrite(STEPPER_ENABLE, HIGH);
+    // Set each pin high sequentially with 5ms delay
+    delay(5);
+    digitalWrite(STEPPER_L1_STEP, HIGH);
+    delay(5);
+    digitalWrite(STEPPER_L1_DIR, HIGH);
+    delay(5);
+    digitalWrite(STEPPER_L2_STEP, HIGH);
+    delay(5);
+    digitalWrite(STEPPER_L2_DIR, HIGH);
+    delay(5);
+    digitalWrite(STEPPER_R1_STEP, HIGH);
+    delay(5);
+    digitalWrite(STEPPER_R1_DIR, HIGH);
+    delay(5);
+    digitalWrite(STEPPER_R2_STEP, HIGH);
+    delay(5);
+    digitalWrite(STEPPER_R2_DIR, HIGH);
+    delay(5);
+    digitalWrite(STEPPER_ENABLE, HIGH);
 }
 
 void loop() {
-  // Nothing to do here
+    // Nothing to do here
 }

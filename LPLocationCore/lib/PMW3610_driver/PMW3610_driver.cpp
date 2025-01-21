@@ -217,6 +217,41 @@ bool PMW3610Driver::_self_test() {
         return false;
     }
 
+    #ifdef PMW3610_EXTENDED_SELF_TEST
+        // Perform extended self-test
+        // Step 1: Reset
+        _SPI_write(PMW3610_REG_POWER_UP_RESET, PMW3610_POWERUP_CMD_RESET);
+        delay(PMW3610_WAKEUP_TIME_MS);
+        // Step 2: Start extended self-test
+        _SPI_write(PMW3610_REG_SPI_CLK_ON_REQ, PMW3610_SPI_CLOCK_CMD_ENABLE);
+        delayMicroseconds(1);
+        _SPI_write(PMW3610_REG_SMART_EN, 0x10);
+        _SPI_write(PMW3610_REG_SELF_TEST, 0x01);
+        delay(64*4); // Wait for 64 frames
+        delay(PMW3610_INIT_SELF_TEST_MS);
+        //Step 3: Check results
+        uint8_t crc[4] = {0x00, 0x00, 0x00};
+        crc[0] = _SPI_read(PMW3610_REG_CRC0);
+        crc[1] = _SPI_read(PMW3610_REG_CRC1);
+        crc[2] = _SPI_read(PMW3610_REG_CRC2);
+        crc[3] = _SPI_read(PMW3610_REG_CRC3);
+        if (crc[0] != 0x73 || crc[1] != 0xc4 || crc[2] != 0xc1 || crc[3] != 0xEA) {
+            Serial.println("PMW3610 extended self-test failed!");
+            Serial.print("CRC0: ");
+            Serial.print(crc[0], HEX);
+            Serial.print(", CRC1: ");
+            Serial.print(crc[1], HEX);
+            Serial.print(", CRC2: ");
+            Serial.print(crc[2], HEX);
+            Serial.print(", CRC3: ");
+            Serial.println(crc[3], HEX);
+            return false;
+        } else {
+            _SPI_reset();
+            delay(PMW3610_WAKEUP_TIME_MS);
+        }
+    #endif
+
     return true;
 }
 
@@ -609,9 +644,9 @@ void PMW3610Driver::_intTask(void *pvParameters) {
 /* PMW3610 Driver public functions */
 
 bool PMW3610Driver::begin(int sckPin, int mosiMisoPin, int csPin, int irqPin, int resetPin) {
-#ifdef DEBUG
-    Serial.println("Initializing PMW3610 sensor...");
-#endif
+    #ifdef DEBUG
+        Serial.println("Initializing PMW3610 sensor...");
+    #endif
 
     // Step 1: Power up reset
     // Start SPI communication
@@ -624,22 +659,22 @@ bool PMW3610Driver::begin(int sckPin, int mosiMisoPin, int csPin, int irqPin, in
     if (!_check_product_id()) {
         return false;
     }
-#ifdef DEBUG
-    Serial.println("PMW3610 product ID and revision ID match!");
-#endif
+    #ifdef DEBUG
+        Serial.println("PMW3610 product ID and revision ID match!");
+    #endif
 
     // Step 2: Perform self-test
     if (!_self_test()) {
         return false;
     }
-#ifdef DEBUG
-    Serial.println("PMW3610 self-test passed!");
-#endif
+    #ifdef DEBUG
+        Serial.println("PMW3610 self-test passed!");
+    #endif
 
 // Step 4: Configure sensor
-#ifdef DEBUG
-    Serial.println("Configuring PMW3610 sensor...");
-#endif
+    #ifdef DEBUG
+        Serial.println("Configuring PMW3610 sensor...");
+    #endif
     if (!_configure()) {
         return false;
     }

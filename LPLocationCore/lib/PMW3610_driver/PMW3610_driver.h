@@ -8,7 +8,6 @@
 // PMW3610 driver class, using bit-banged 3-wire SPI implementation
 
 /* Class hard-configurations */
-// #define PMW3610_SMART_ALGORITHM             // Extends sensor tracking across a wider range of surfaces
 #define PMW3610_MOTION_DATA_UPDATE_RATE_MS  5
 #define PMW3610_TASK_PRIORITY               1
 #define PMW3610_TASK_CORE                   1
@@ -17,7 +16,6 @@
 
 #define DEBUG
 // todo: add frame data output
-// todo: add extended self-test
 
 // Struct to hold sensor data
 struct PMW3610Data {

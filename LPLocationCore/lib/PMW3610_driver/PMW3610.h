@@ -78,6 +78,8 @@
 #define PMW3610_REG_REST3_PERIOD     0x20
 #define PMW3610_REG_OBSERVATION      0x2D
 
+#define PMW3610_REG_SMART_EN         0x32
+
 #define PMW3610_REG_PIXEL_GRAB       0x35
 #define PMW3610_REG_FRAME_GRAB       0x36
 

@@ -8,6 +8,7 @@
 // PMW3610 driver class, using bit-banged 3-wire SPI implementation
 
 /* Class hard-configurations */
+// #define PMW3610_SMART_ALGORITHM             // Extends sensor tracking across a wider range of surfaces
 #define PMW3610_MOTION_DATA_UPDATE_RATE_MS  5
 #define PMW3610_TASK_PRIORITY               1
 #define PMW3610_TASK_CORE                   1
@@ -15,7 +16,6 @@
 #define PMW3610_USE_PIN_ISR                 false
 
 #define DEBUG
-// todo: add smart algorithm for more surface compatability
 // todo: add frame data output
 // todo: add extended self-test
 
@@ -67,6 +67,9 @@ class PMW3610Driver {
     bool _set_sample_time(uint8_t reg_addr, uint32_t sample_time);
     bool _configure();
 
+    #ifdef PMW3610_SMART_ALGORITHM
+        bool _smart_algorithm_flag = true;
+    #endif
     bool _motion_burst_read(uint8_t *motion_data, size_t len);
     bool _motion_burst_parse();
 

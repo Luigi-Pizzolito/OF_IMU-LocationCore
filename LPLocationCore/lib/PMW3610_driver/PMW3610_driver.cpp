@@ -485,6 +485,39 @@ bool PMW3610Driver::_motion_burst_read(uint8_t *motion_data, size_t len) {
 
     delayMicroseconds(PMW3610_INTERREAD_TIME_US);  // Inter-command read minimum delay
 
+    #ifdef PMW3610_SMART_ALGORITHM
+        // Smart algorithm to extends sensor tracking across a wider range of surfaces
+        #ifdef DEBUG
+            Serial.print("Shutter: ");
+            Serial.print(motion_data[PMW3610_SHUTTER_H_POS]);
+            Serial.print(" ");
+            Serial.print((motion_data[PMW3610_SHUTTER_H_POS] == 0x00) ? "YES" : "NO");
+            Serial.print(" ");
+            Serial.print(motion_data[PMW3610_SHUTTER_L_POS]);
+            Serial.print(" ");
+            Serial.println((motion_data[PMW3610_SHUTTER_L_POS] < 45) ? "<45" : ">45");
+        #endif
+
+        if (_smart_algorithm_flag && motion_data[PMW3610_SHUTTER_H_POS] == 0x00 && motion_data[PMW3610_SHUTTER_L_POS] < 45) {
+            // Smart enable
+            #ifdef DEBUG
+                Serial.println("Smart algorithm enabled!");
+            #endif
+
+            _SPI_write(PMW3610_REG_SMART_EN, 0x00);
+            _smart_algorithm_flag = false;
+        }
+        if (!_smart_algorithm_flag && motion_data[PMW3610_SHUTTER_H_POS] == 0x00 && motion_data[PMW3610_SHUTTER_L_POS] > 45) {
+            // Smart disable
+            #ifdef DEBUG
+                Serial.println("Smart algorithm disabled!");
+            #endif
+
+            _SPI_write(PMW3610_REG_SMART_EN, 0x80);
+            _smart_algorithm_flag = true;
+        }
+    #endif
+
     return true;
 }
 

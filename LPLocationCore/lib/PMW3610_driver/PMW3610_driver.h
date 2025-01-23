@@ -2,8 +2,9 @@
 
 #include "PMW3610.h"
 #include <Arduino.h>
-#include <FunctionalInterrupt.h>
-#include <iostream>
+#if PMW3610_USE_PIN_ISR
+    #include <FunctionalInterrupt.h>
+#endif
 
 // PMW3610 driver class, using bit-banged 3-wire SPI implementation
 

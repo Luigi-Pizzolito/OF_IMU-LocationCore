@@ -3,8 +3,10 @@
 #include "config.h"
 
 #include <PMW3610_driver.h>
+#include <ICM20948_driver.h>
 
 PMW3610Driver pmw;
+ICM20948Driver imu;
 
 void setup() {
     // put your setup code here, to run once:
@@ -24,18 +26,26 @@ void setup() {
         while (1);  // Stop the program if sensor initialization fails
     }
 
-    #ifdef PMW3610_ENABLE_FRAME_CAPTURE
-        for (int i = 0; i < 5000 / 5; i++) {
-            if (pmw.data.motion) {
-                pmw.printData();
-            }
-            delay(5);
-        }
-        pmw.capture_frame();
-        delay(5);
-        pmw.print_frame_as_pgm();
-        delay(5);
-    #endif
+    // #ifdef PMW3610_ENABLE_FRAME_CAPTURE
+    //     for (int i = 0; i < 5000 / 5; i++) {
+    //         if (pmw.data.motion) {
+    //             pmw.printData();
+    //         }
+    //         delay(5);
+    //     }
+    //     pmw.capture_frame();
+    //     delay(5);
+    //     pmw.print_frame_as_pgm();
+    //     delay(5);
+    // #endif
+
+    suc = imu.begin(ICM20948_SDA, ICM20948_SCL);
+    if (suc) {
+        Serial.println("ICM20948 sensor initialised successfully!");
+    } else {
+        Serial.println("ICM20948 sensor initialization failed!");
+        while (1); // Stop the program if sensor initialization fails
+    }
 }
 
 void loop() {
@@ -43,5 +53,6 @@ void loop() {
     if (pmw.data.motion) {
         pmw.printData();
     }
-    delay(5);
+    imu.printData();
+    delay(100);
 }

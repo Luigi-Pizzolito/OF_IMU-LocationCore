@@ -4,26 +4,18 @@
 bool ICM20948Driver::begin(int sda, int scl) {
     // Step 1: Initialise I2C
     Wire.begin(sda, scl);
+    Wire.setClock(ICM20948_SPEED);
+    delay(10);
+
     // Step 2: Init communication
-    if (!_IMU.init()) {
-        return false;
-    }
-    if (!_IMU.initMagnetometer()) {
-        return false;
-    }
+    _imu.init(_icmSettings);
     #ifdef DEBUG
     #endif
-    // Step 3: Check ID
-    if (!_check_product_id()) {
-        return false;
-    }
-    #ifdef DEBUG
-    #endif
+
     // Step 4: Calibrate
     _calibrate();
-    // Step 5: Configure
-    _configure();
-    // Step 6: Set up task
+
+    // Step 5: Set up task
     BaseType_t xReturned;
     xReturned = xTaskCreatePinnedToCore(_refreshTask, "ICM20948RefreshData", ICM20948_TASK_STACK_SIZE, this, ICM20948_TASK_PRIORITY, &_refreshTaskHandle, ICM20948_TASK_CORE);
     if (xReturned != pdPASS) {
@@ -33,71 +25,62 @@ bool ICM20948Driver::begin(int sda, int scl) {
 
     #ifdef DEBUG
     #endif
+    
+    return true;
 }
 
 void ICM20948Driver::printData() {
     //todo:
+    String output = "{";
+    output += "\"gyro\":{\"x\":" + String(data.gyro[0]) + ",\"y\":" + String(data.gyro[1]) + ",\"z\":" + String(data.gyro[2]) + "},";
+    output += "\"accel\":{\"x\":" + String(data.acel[0]) + ",\"y\":" + String(data.acel[1]) + ",\"z\":" + String(data.acel[2]) + "},";
+    output += "\"mag\":{\"x\":" + String(data.magt[0]) + ",\"y\":" + String(data.magt[1]) + ",\"z\":" + String(data.magt[2]) + "},";
+    output += "\"linear_accel\":{\"x\":" + String(data.l_acel[0]) + ",\"y\":" + String(data.l_acel[1]) + ",\"z\":" + String(data.l_acel[2]) + "},";
+    output += "\"quat9\":{\"w\":" + String(data.quat9[0]) + ",\"x\":" + String(data.quat9[1]) + ",\"y\":" + String(data.quat9[2]) + ",\"z\":" + String(data.quat9[3]) + "},";
+    output += "\"euler9\":{\"roll\":" + String(data.quat9_e[0]) + ",\"pitch\":" + String(data.quat9_e[1]) + ",\"yaw\":" + String(data.quat9_e[2]) + "}";
+    output += "}";
+
+    Serial.println(output);
 }
 
 /* ICM20948 driver functions */
-bool ICM20948Driver::_check_product_id() {
-    uint8_t id = _IMU.whoAmI();
-    if (id != 0xEA) {
-        return false;
-    }
-
-    return true;
-}
-
 void ICM20948Driver::_calibrate() {
     #ifdef DEBUG
     #endif
-    _IMU.autoOffsets();
-}
-
-void ICM20948Driver::_configure() {
-    // Accelerometer
-    _IMU.enableAcc(true);
-    _IMU.setAccRange(ICM20948_ACC_RANGE);
-    _IMU.setAccDLPF(ICM20948_ACC_DLPF);
-    //? set sample rate divider?
-    // Gyroscope
-    _IMU.enableGyr(true);
-    _IMU.setGyrRange(ICM20948_GYR_RANGE);
-    _IMU.setGyrDLPF(ICM20948_GYR_DLPF);
-    //? set sample rate divider?
-    // Temperature
-    _IMU.setTempDLPF(ICM20948_TEMP_DLPF);
-    // Magnetometer
-    _IMU.setMagOpMode(ICM20948_MAG_MODE);
-    switch (ICM20948_MAG_MODE) {
-        case AK09916_CONT_MODE_100HZ:
-            delay(1000/100);
-            break;
-        case AK09916_CONT_MODE_50HZ:
-            delay(1000/50);
-            break;
-        case AK09916_CONT_MODE_20HZ:
-            delay(1000/20);
-            break;
-        case AK09916_CONT_MODE_10HZ:
-            delay(1000/10);
-            break;
-
-        default:
-            break;
-    }
+    // _IMU.autoOffsets();
 }
 
 void ICM20948Driver::_read_data() {
-    _IMU.readSensor();
-    _IMU.getGValues(&data.acel);
-    _IMU.getGyrValues(&data.gyrl);
-    _IMU.getMagValues(&data.magt);
-    _IMU.getAngles(&data.angle);
-    data.pitch = _IMU.getPitch();
-    data.roll = _IMU.getRoll();
-    data.temp = _IMU.getTemperature();
+    // _IMU.readSensor();
+    // _IMU.getGValues(&data.acel);
+    // _IMU.getGyrValues(&data.gyrl);
+    // _IMU.getMagValues(&data.magt);
+    // _IMU.getAngles(&data.angle);
+    // data.pitch = _IMU.getPitch();
+    // data.roll = _IMU.getRoll();
+    // data.temp = _IMU.getTemperature();
+
+    _imu.task();
+
+    if (_imu.gyroDataIsReady()) {
+        _imu.readGyroData(&data.gyro[0], &data.gyro[1], &data.gyro[2]);
+    }
+    if (_imu.accelDataIsReady()) {
+        _imu.readAccelData(&data.acel[0], &data.acel[1], &data.acel[2]);
+    }
+    if (_imu.magDataIsReady()) {
+        _imu.readMagData(&data.magt[0], &data.magt[1], &data.magt[2]);
+    }
+
+    if (_imu.linearAccelDataIsReady()) {
+        _imu.readLinearAccelData(&data.l_acel[0], &data.l_acel[1], &data.l_acel[2]);
+    }
+    if (_imu.quat9DataIsReady()) {
+        _imu.readQuat9Data(&data.quat9[0], &data.quat9[1], &data.quat9[2], &data.quat9[3]);
+    }
+    if (_imu.euler9DataIsReady()) {
+        _imu.readEuler9Data(&data.quat9_e[0], &data.quat9_e[1], &data.quat9_e[2]);
+    }
 }
 
 void ICM20948Driver::_refreshTask(void *pvParameters) {

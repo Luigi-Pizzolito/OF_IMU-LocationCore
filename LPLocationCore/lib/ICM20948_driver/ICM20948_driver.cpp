@@ -7,15 +7,13 @@ bool ICM20948Driver::begin(int sda, int scl) {
     Wire.setClock(ICM20948_SPEED);
     delay(10);
 
-    // Step 2: Init communication
+    // Step 2: Init communication, calibrate and set up sensor
     _imu.init(_icmSettings);
     #ifdef DEBUG
+        Serial.println("ICM20948 sensor initialised!");
     #endif
 
-    // Step 4: Calibrate
-    _calibrate();
-
-    // Step 5: Set up task
+    // Step 3: Set up task
     BaseType_t xReturned;
     xReturned = xTaskCreatePinnedToCore(_refreshTask, "ICM20948RefreshData", ICM20948_TASK_STACK_SIZE, this, ICM20948_TASK_PRIORITY, &_refreshTaskHandle, ICM20948_TASK_CORE);
     if (xReturned != pdPASS) {
@@ -24,13 +22,13 @@ bool ICM20948Driver::begin(int sda, int scl) {
     }
 
     #ifdef DEBUG
+        Serial.println("ICM20948 sensor configured successfully!");
     #endif
     
     return true;
 }
 
 void ICM20948Driver::printData() {
-    //todo:
     String output = "{";
     output += "\"gyro\":{\"x\":" + String(data.gyro[0]) + ",\"y\":" + String(data.gyro[1]) + ",\"z\":" + String(data.gyro[2]) + "},";
     output += "\"accel\":{\"x\":" + String(data.acel[0]) + ",\"y\":" + String(data.acel[1]) + ",\"z\":" + String(data.acel[2]) + "},";
@@ -44,22 +42,7 @@ void ICM20948Driver::printData() {
 }
 
 /* ICM20948 driver functions */
-void ICM20948Driver::_calibrate() {
-    #ifdef DEBUG
-    #endif
-    // _IMU.autoOffsets();
-}
-
 void ICM20948Driver::_read_data() {
-    // _IMU.readSensor();
-    // _IMU.getGValues(&data.acel);
-    // _IMU.getGyrValues(&data.gyrl);
-    // _IMU.getMagValues(&data.magt);
-    // _IMU.getAngles(&data.angle);
-    // data.pitch = _IMU.getPitch();
-    // data.roll = _IMU.getRoll();
-    // data.temp = _IMU.getTemperature();
-
     _imu.task();
 
     if (_imu.gyroDataIsReady()) {
@@ -86,6 +69,7 @@ void ICM20948Driver::_read_data() {
 void ICM20948Driver::_refreshTask(void *pvParameters) {
     ICM20948Driver *driver = (ICM20948Driver *)pvParameters;
     #ifdef DEBUG
+        Serial.println("ICM20948 update task started!");
     #endif
     while (true) {
         // Read motion data every Xms, always

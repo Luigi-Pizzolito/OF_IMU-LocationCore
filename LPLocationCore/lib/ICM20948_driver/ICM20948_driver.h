@@ -16,15 +16,6 @@
 
 // Struct to hold sensor data
 struct ICM20948Data {
-    /*
-    xyzFloat acel;      // g (x,y,z)
-    xyzFloat gyrl;      // deg/s (x,y,z)
-    xyzFloat magt;      // uT (x,y,z)
-    xyzFloat angle;     // +-pi rad (x,y,z)
-    float pitch;        // +-pi rad
-    float roll;         // +-pi rad
-    float temp;         // C
-    **/
    float gyro[3];
    float acel[3];
    float magt[3];
@@ -78,8 +69,6 @@ class ICM20948Driver {
     };
 
     /* ICM20948 driver functions */
-    void _calibrate();
-
     void _read_data();
 
     TaskHandle_t _refreshTaskHandle = NULL;

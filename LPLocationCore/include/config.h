@@ -8,5 +8,5 @@
 #define PMW3610_IRQ_PIN 38
 
 /* ICM20948 pins */
-#define ICM20948_SDA 5
-#define ICM20948_SCL 4
+#define ICM20948_SDA_PIN 5
+#define ICM20948_SCL_PIN 4

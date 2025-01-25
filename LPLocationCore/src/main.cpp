@@ -39,7 +39,7 @@ void setup() {
     //     delay(5);
     // #endif
 
-    suc = imu.begin(ICM20948_SDA, ICM20948_SCL);
+    suc = imu.begin(ICM20948_SDA_PIN, ICM20948_SCL_PIN);
     if (suc) {
         Serial.println("ICM20948 sensor initialised successfully!");
     } else {

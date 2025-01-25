@@ -20,8 +20,10 @@
 // Struct to hold sensor data
 struct PMW3610Data {
     bool     motion;
-    int16_t  delta_x;
-    int16_t  delta_y;
+    int16_t  delta_x_counts;
+    int16_t  delta_y_counts;
+    float    delta_x;
+    float    delta_y;
     uint16_t squal;
     bool     err;
     bool     ovf;

@@ -575,10 +575,13 @@ bool PMW3610Driver::_motion_burst_parse() {
         data.err = (motion_reg & 0x10) || !(motion_reg & 0x08) || (motion_reg & 0x04);
         data.ovf = motion_reg & 0x10;
         // 3. Parse delta X and Y
-        data.delta_x =
+        data.delta_x_counts =
             TOINT16((motion_data[PMW3610_X_L_POS] + ((motion_data[PMW3610_XY_H_POS] & 0xF0) << 4)), 12) / PMW3610_DEFAULT_CPI_DIVISOR;
-        data.delta_y =
+        data.delta_y_counts =
             TOINT16((motion_data[PMW3610_Y_L_POS] + ((motion_data[PMW3610_XY_H_POS] & 0x0F) << 8)), 12) / PMW3610_DEFAULT_CPI_DIVISOR;
+        // Convert to delta mm
+        data.delta_x = data.delta_x_counts * 25.4 / PMW3610_DEFAULT_CPI;
+        data.delta_y = data.delta_y_counts * 25.4 / PMW3610_DEFAULT_CPI;
         // 4. Parse SQUAL
         data.squal = static_cast<uint16_t>(motion_data[PMW3610_SQUAL_POS]) << 1;
 

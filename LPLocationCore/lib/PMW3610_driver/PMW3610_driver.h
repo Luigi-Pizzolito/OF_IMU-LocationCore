@@ -34,6 +34,7 @@ class PMW3610Driver {
    public:
     /* PMW3610 driver implementation */
     PMW3610Driver();
+    ~PMW3610Driver();
 
     PMW3610Data data;
     #ifdef PMW3610_ENABLE_FRAME_CAPTURE

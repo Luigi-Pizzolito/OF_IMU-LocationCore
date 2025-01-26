@@ -9,6 +9,13 @@ PMW3610Driver::PMW3610Driver() {
 #else
 PMW3610Driver::PMW3610Driver() {}
 #endif
+PMW3610Driver::~PMW3610Driver() {
+    // Clean up
+    // Stop task
+    vTaskDelete(_intTaskHandle);
+    // Detach interrupt
+    detachInterrupt(digitalPinToInterrupt(_irqPin));
+}
 
 /* Bit-banged 3-wire SPI functions */
 // CPOL and CPHA are 1, so clock is normally high and data is sampled on the rising edge

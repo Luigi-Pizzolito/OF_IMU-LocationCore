@@ -29,6 +29,7 @@ struct ICM20948Data {
 class ICM20948Driver {
     public:
     /* ICM20948 driver implementation */
+    ~ICM20948Driver();
     ICM20948Data data;
     bool begin(int sda, int scl);
     void printData();

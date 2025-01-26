@@ -1,6 +1,12 @@
 #include "ICM20948_driver.h"
 
 /* ICM20948 driver implementation */
+ICM20948Driver::~ICM20948Driver() {
+    // Clean up
+    // Stop task
+    vTaskDelete(_refreshTaskHandle);
+}
+
 bool ICM20948Driver::begin(int sda, int scl) {
     // Step 1: Initialise I2C
     Wire.begin(sda, scl);

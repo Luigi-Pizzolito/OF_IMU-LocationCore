@@ -7,7 +7,7 @@ ICM20948Driver::~ICM20948Driver() {
     vTaskDelete(_refreshTaskHandle);
 }
 
-bool ICM20948Driver::begin(int sda, int scl) {
+bool ICM20948Driver::begin(int sda, int scl, bool autocapture) {
     // Step 1: Initialise I2C
     Wire.begin(sda, scl);
     Wire.setClock(ICM20948_SPEED);
@@ -19,12 +19,14 @@ bool ICM20948Driver::begin(int sda, int scl) {
         Serial.println("ICM20948 sensor initialised!");
     #endif
 
-    // Step 3: Set up task
-    BaseType_t xReturned;
-    xReturned = xTaskCreatePinnedToCore(_refreshTask, "ICM20948RefreshData", ICM20948_TASK_STACK_SIZE, this, ICM20948_TASK_PRIORITY, &_refreshTaskHandle, ICM20948_TASK_CORE);
-    if (xReturned != pdPASS) {
-        Serial.println("ICM20948 update task creation failed!");
-        return false;
+    if (autocapture) {
+        // Step 3: Set up task
+        BaseType_t xReturned;
+        xReturned = xTaskCreatePinnedToCore(_refreshTask, "ICM20948RefreshData", ICM20948_TASK_STACK_SIZE, this, ICM20948_TASK_PRIORITY, &_refreshTaskHandle, ICM20948_TASK_CORE);
+        if (xReturned != pdPASS) {
+            Serial.println("ICM20948 update task creation failed!");
+            return false;
+        }
     }
 
     #ifdef DEBUG
@@ -83,4 +85,8 @@ void ICM20948Driver::_refreshTask(void *pvParameters) {
         // Delay
         vTaskDelay(pdMS_TO_TICKS(ICM20948_MOTION_DATA_UPDATE_RATE_MS));
     }
+}
+
+void ICM20948Driver::update() {
+    _read_data();
 }

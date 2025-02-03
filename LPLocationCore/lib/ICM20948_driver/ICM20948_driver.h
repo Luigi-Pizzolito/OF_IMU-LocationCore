@@ -31,7 +31,8 @@ class ICM20948Driver {
     /* ICM20948 driver implementation */
     ~ICM20948Driver();
     ICM20948Data data;
-    bool begin(int sda, int scl);
+    bool begin(int sda, int scl, bool autocapture = true);
+    void update();
     void printData();
 
     private:

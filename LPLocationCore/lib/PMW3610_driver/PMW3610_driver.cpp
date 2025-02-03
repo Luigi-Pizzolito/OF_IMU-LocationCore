@@ -655,7 +655,7 @@ void PMW3610Driver::_intTask(void *pvParameters) {
 
 /* PMW3610 Driver public functions */
 
-bool PMW3610Driver::begin(int sckPin, int mosiMisoPin, int csPin, int irqPin, int resetPin) {
+bool PMW3610Driver::begin(int sckPin, int mosiMisoPin, int csPin, int irqPin, int resetPin, bool autocapture) {
 #ifdef DEBUG
     Serial.println("Initializing PMW3610 sensor...");
 #endif
@@ -691,23 +691,25 @@ bool PMW3610Driver::begin(int sckPin, int mosiMisoPin, int csPin, int irqPin, in
         return false;
     }
 
-    // Step 5: Set up interrupt & start task
-    // todo: add error handling on interrupt & task setup
-    // Setup interrupt pin
-    _irqPin = irqPin;
-    pinMode(_irqPin, INPUT);
-#if PMW3610_USE_PIN_ISR
-    // Attach interrupt
-    // attachInterrupt(digitalPinToInterrupt(_irqPin), std::bind(&PMW3610Driver::_intISR, this), CHANGE);
-    attachInterrupt(digitalPinToInterrupt(_irqPin), &PMW3610Driver::_intISR, CHANGE);
-#endif
+    if (autocapture) {
+            // Step 5: Set up interrupt & start task
+        // todo: add error handling on interrupt & task setup
+        // Setup interrupt pin
+        _irqPin = irqPin;
+        pinMode(_irqPin, INPUT);
+    #if PMW3610_USE_PIN_ISR
+        // Attach interrupt
+        // attachInterrupt(digitalPinToInterrupt(_irqPin), std::bind(&PMW3610Driver::_intISR, this), CHANGE);
+        attachInterrupt(digitalPinToInterrupt(_irqPin), &PMW3610Driver::_intISR, CHANGE);
+    #endif
 
-    // Create task
-    BaseType_t xReturned;
-    xReturned = xTaskCreatePinnedToCore(_intTask, "PMW3610INTPinMonitor", PMW3610_TASK_STACK_SIZE, this, PMW3610_TASK_PRIORITY, &_intTaskHandle, PMW3610_TASK_CORE);
-    if (xReturned != pdPASS) {
-        Serial.println("PMW3610 update task creation failed!");
-        return false;
+        // Create task
+        BaseType_t xReturned;
+        xReturned = xTaskCreatePinnedToCore(_intTask, "PMW3610INTPinMonitor", PMW3610_TASK_STACK_SIZE, this, PMW3610_TASK_PRIORITY, &_intTaskHandle, PMW3610_TASK_CORE);
+        if (xReturned != pdPASS) {
+            Serial.println("PMW3610 update task creation failed!");
+            return false;
+        }
     }
 
 #ifdef DEBUG
@@ -715,6 +717,11 @@ bool PMW3610Driver::begin(int sckPin, int mosiMisoPin, int csPin, int irqPin, in
 #endif
 
     return true;
+}
+
+void PMW3610Driver::update() {
+    // Update motion data
+    _motion_burst_parse();
 }
 
 void PMW3610Driver::printData() {

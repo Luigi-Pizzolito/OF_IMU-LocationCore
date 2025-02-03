@@ -41,7 +41,8 @@ class PMW3610Driver {
         uint8_t     frame_data[484];
     #endif
 
-    bool        begin(int sckPin, int mosiMisoPin, int csPin, int irqPin, int resetPin);
+    bool        begin(int sckPin, int mosiMisoPin, int csPin, int irqPin, int resetPin, bool autocapture = true);
+    void        update();
     void        printData();
     #ifdef PMW3610_ENABLE_FRAME_CAPTURE
         void    capture_frame();

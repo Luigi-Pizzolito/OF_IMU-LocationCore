@@ -1,18 +1,23 @@
 #include <Arduino.h>
 
-#include "config.h"
+// #include "config.h"
 
-#include <PMW3610_driver.h>
-#include <ICM20948_driver.h>
+// #include <PMW3610_driver.h>
+// #include <ICM20948_driver.h>
 
-PMW3610Driver pmw;
-ICM20948Driver imu;
+// PMW3610Driver pmw;
+// ICM20948Driver imu;
+
+#include <KalmanFilter.h>
+
+KalmanFilter kf;
 
 void setup() {
     // put your setup code here, to run once:
     Serial.begin(115200);
     delay(2000);
 
+    /*
     bool suc = true;
 
     Serial.println("Starting pmw communication...");
@@ -46,13 +51,18 @@ void setup() {
         Serial.println("ICM20948 sensor initialization failed!");
         while (1); // Stop the program if sensor initialization fails
     }
+    */
+
+   kf.begin();
 }
 
 void loop() {
+    /*
     // put your main code here, to run repeatedly:
     if (pmw.data.motion) {
         pmw.printData();
     }
     imu.printData();
     delay(100);
+    */
 }

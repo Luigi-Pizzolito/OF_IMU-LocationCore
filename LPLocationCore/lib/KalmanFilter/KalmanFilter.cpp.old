@@ -1,0 +1,118 @@
+#include "KalmanFilter.h"
+
+KalmanFilter::KalmanFilter() {
+    // Initialise mutex and queues
+    _mutex = xSemaphoreCreateMutex();
+    configASSERT(_mutex != NULL);
+
+    imu_queue = xQueueCreate(10, sizeof(IMUData));
+    configASSERT(imu_queue != NULL);
+
+    of_queue = xQueueCreate(10, sizeof(OFData));
+    configASSERT(of_queue != NULL);
+
+    // Initialise state and covariance
+    xSemaphoreTake(_mutex, portMAX_DELAY);
+    memset(_state, 0, sizeof(_state));
+    memset(_cov, 0, sizeof(_cov));
+    //todo: populate initial state and covariance
+    xSemaphoreGive(_mutex);
+
+    // Start predict and update tasks
+    BaseType_t xReturned;
+    xReturned = xTaskCreatePinnedToCore(_predict_task, "KalmanPredict", 4096, this, 3, &_predict_task_h, 1);
+    configASSERT(xReturned == pdPASS);
+    xReturned = xTaskCreatePinnedToCore(_update_task, "KalmanUpdate", 4096, this, 2, &_update_task_h, 1);
+    configASSERT(xReturned == pdPASS);
+}
+
+KalmanFilter::~KalmanFilter() {
+    // Clean up
+    vTaskDelete(_predict_task_h);
+    vTaskDelete(_update_task_h);
+    vQueueDelete(imu_queue);
+    vQueueDelete(of_queue);
+    vSemaphoreDelete(_mutex);
+}
+
+// Thread-safe state access
+void KalmanFilter::getState(float out_state[STATE_DIM]) {
+    xSemaphoreTake(_mutex, portMAX_DELAY);
+    memcpy(out_state, _state, sizeof(_state));
+    xSemaphoreGive(_mutex);
+}
+
+void KalmanFilter::getCovariance(float out_cov[STATE_DIM * STATE_DIM]) {
+    xSemaphoreTake(_mutex, portMAX_DELAY);
+    memcpy(out_cov, _cov, sizeof(_cov));
+    xSemaphoreGive(_mutex);
+}
+
+//todo: dont need to pass around the quaternion, just use the global one
+//todo: make sure to run these on a separate core than the sensor collection?
+//todo: add esp-now output for the state
+//todo: write a separate .h only file for the quaternion math
+
+// Predict steps (IMU, 200Hz)
+void KalmanFilter::_predict_task(void* pvParams) {
+    KalmanFilter* kf = (KalmanFilter*)pvParams;
+    IMUData imu_data;
+    uint32_t last_ts = micros();
+
+    while (true) {
+        // Get IMU data
+        if (xQueueReceive(kf->imu_queue, &imu_data, portMAX_DELAY) == pdTRUE) {
+            
+            xSemaphoreTake(kf->_mutex, portMAX_DELAY);
+
+            // Get time delta
+            float dt = (imu_data.ts - last_ts) * 1e-6f;
+            last_ts = imu_data.ts;
+
+            // Update global quaternion
+            // kf->_q_global = imu_data.quat;
+            memcpy(kf->_q_global, imu_data.quat, sizeof(imu_data.quat));
+
+            // Rotate acceleration to global frame
+            float a_global[3];
+            //todo: use quaternion to rotate acceleration
+
+            // Predict
+            kf->_predict(a_global, imu_data.quat, dt);
+            xSemaphoreGive(kf->_mutex);
+        }
+    }
+}
+
+void KalmanFilter::_predict(const float a_global[3], const float q_imu[4], float dt) {
+}
+
+// Update steps (OF, 50Hz)
+void KalmanFilter::_update_task(void* pvParams) {
+    KalmanFilter* kf = (KalmanFilter*)pvParams;
+    OFData of_data;
+    uint32_t last_ts = micros();
+
+    while (true) {
+        // Get OF data
+        if (xQueueReceive(kf->of_queue, &of_data, portMAX_DELAY) == pdTRUE) {
+            
+            xSemaphoreTake(kf->_mutex, portMAX_DELAY);
+            // Get time delta
+            float dt = (of_data.ts - last_ts) * 1e-6f;
+            last_ts = of_data.ts;
+
+            // Rotate OF data to global frame
+            float dx_global, dy_global;
+            //todo: use quaternion (kf->_q_global) to rotate OF data
+            
+            // Update
+            
+            kf->_update(of_data.dx, of_data.dy, kf->_q_global, dt);
+            xSemaphoreGive(kf->_mutex);
+        }
+    }
+}
+
+void KalmanFilter::_update(const float dx, const float dy, const float q_imu[4], float dt) {
+}

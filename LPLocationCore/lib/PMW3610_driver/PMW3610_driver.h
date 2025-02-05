@@ -10,8 +10,8 @@
 
 /* Class hard-configurations */
 #define PMW3610_MOTION_DATA_UPDATE_RATE_MS  5
-#define PMW3610_TASK_PRIORITY               1
-#define PMW3610_TASK_CORE                   1
+#define PMW3610_TASK_PRIORITY               3
+#define PMW3610_TASK_CORE                   0
 #define PMW3610_TASK_STACK_SIZE             2048
 #define PMW3610_USE_PIN_ISR                 false
 

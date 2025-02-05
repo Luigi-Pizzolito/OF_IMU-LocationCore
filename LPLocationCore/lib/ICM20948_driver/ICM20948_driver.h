@@ -8,11 +8,11 @@
 
 /* Class hard-configurations */
 #define ICM20948_MOTION_DATA_UPDATE_RATE_MS  5
-#define ICM20948_TASK_PRIORITY               1
-#define ICM20948_TASK_CORE                   1
+#define ICM20948_TASK_PRIORITY               3
+#define ICM20948_TASK_CORE                   0
 #define ICM20948_TASK_STACK_SIZE             4096
 
-#define DEBUG
+// #define DEBUG
 
 // Struct to hold sensor data
 struct ICM20948Data {

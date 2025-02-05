@@ -587,7 +587,7 @@ ArduinoICM20948::ArduinoICM20948()
 void ArduinoICM20948::init(ArduinoICM20948Settings settings)
 {
   set_comm_interface(settings);
-  Serial.println("Initializing ICM-20948...");
+  // Serial.println("Initializing ICM-20948...");
 
   // Initialize icm20948 serif structure
   struct inv_icm20948_serif icm20948_serif;

@@ -10,7 +10,11 @@
 
 #include <KalmanFilter.h>
 
+// #include <DataDumper.h>
+
 KalmanFilter kf;
+
+// DataDumper dd;
 
 void setup() {
     // put your setup code here, to run once:
@@ -54,6 +58,14 @@ void setup() {
     */
 
    kf.begin();
+    // dd.begin();
+
+    delay(1000);
+    while (!Serial.isConnected()) {
+        delay(100);
+    }
+    Serial.println("Serial connected");
+    // dd.serial_recv_print_millis();
 }
 
 void loop() {
@@ -65,4 +77,5 @@ void loop() {
     imu.printData();
     delay(100);
     */
+   
 }

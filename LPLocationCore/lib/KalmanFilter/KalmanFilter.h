@@ -9,9 +9,9 @@
 #include <IIR1stOrderVecF.h>
 #include <Variance.h>
 
-#define ACCEL_ALPHA 0.08 //0.05
+#define ACCEL_ALPHA 0.5 //0.05
 #define OF_ALPHA 0.02
-#define ORION_ALPHA 0.05 //0.02
+#define ORION_ALPHA 0.5 //0.02
 
 #define IMU_VAR_THR 0.5
 
@@ -19,7 +19,7 @@
 #define KAL_TASK_PRIORITY 1
 #define KAL_TASK_STACK_SIZE 4096
 
-#define PREDICT_TASK_FREQUENCY_HZ 100
+#define PREDICT_TASK_FREQUENCY_HZ 50
 #define UPDATE_TASK_FREQUENCY_HZ 10
 
 #define KF_INIT_X 0.0f
@@ -82,8 +82,9 @@ class KalmanFilter {
         dspm::Mat A;
         dspm::Mat h;
         dspm::Mat C;
+        dspm::Mat K;
 
-        State() : x(6, 1), P(6,6), Q(3,3), Qd(6,6), R(3,3), f(6,1), A(6,6), h(3,1), C(3,6) {}
+        State() : x(6, 1), P(6,6), Q(3,3), Qd(6,6), R(3,3), f(6,1), A(6,6), h(3,1), C(3,6), K(3,6) {}
     } _kf_state;
 
     // Internal methods

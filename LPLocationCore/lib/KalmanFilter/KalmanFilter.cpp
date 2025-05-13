@@ -43,12 +43,13 @@ void KalmanFilter::begin() {
         #endif
     } else {
         Serial.println("PMW3610 sensor initialization failed!");
-        while (1) {  // Stop the program if sensor initialization fails
+        for (int i =0; i < 20; i++) {  // Stop the program if sensor initialization fails
             _led.brightness(0, 1);
             delay(100);
             _led.brightness(10, 1);
             delay(100);
         }
+        ESP.restart(); // reset
     }
 
     // Start IMU sensor
@@ -59,20 +60,23 @@ void KalmanFilter::begin() {
         #endif
     } else {
         Serial.println("ICM20948 sensor initialization failed!");
-        while (1) {  // Stop the program if sensor initialization fails
+        for (int i =0; i < 20; i++) {  // Stop the program if sensor initialization fails
             _led.brightness(0, 1);
             delay(100);
             _led.brightness(10, 1);
             delay(100);
         }
+        ESP.restart(); // reset
     }
+
+    delay(2000);
 
     // Initialize the Kalman filter
     _initialise();
 
     // wait for IMU to stabalise
     _led.setPixel(0, L_CYAN, 1);
-    for (int i = 0; i < 20; i++) {
+    for (int i = 0; i < 2; i++) {
         _led.brightness(0, 1);
         delay(100);
         _led.brightness(10, 1);
@@ -84,25 +88,42 @@ void KalmanFilter::begin() {
     xReturned = xTaskCreatePinnedToCore(_predict_task, "predict_task", KAL_TASK_STACK_SIZE, this, KAL_TASK_PRIORITY, &_predict_task_h, KAL_TASK_CORE);
     if (xReturned != pdPASS) {
         Serial.println("Kalman filter predict task creation failed!");
-        while (1);
+        for (int i =0; i < 20; i++) {  // Stop the program if sensor initialization fails
+            _led.brightness(0, 1);
+            delay(100);
+            _led.brightness(10, 1);
+            delay(100);
+        }
+        ESP.restart(); // reset
     }
 
     // Start the update task
     xReturned = xTaskCreatePinnedToCore(_update_task, "update_task", KAL_TASK_STACK_SIZE, this, KAL_TASK_PRIORITY, &_update_task_h, KAL_TASK_CORE);
     if (xReturned != pdPASS) {
         Serial.println("Kalman filter update task creation failed!");
-        while (1);
+        for (int i =0; i < 20; i++) {  // Stop the program if sensor initialization fails
+            _led.brightness(0, 1);
+            delay(100);
+            _led.brightness(10, 1);
+            delay(100);
+        }
+        ESP.restart(); // reset
     }
 }
 
 void KalmanFilter::_printMat(const char* name, const dspm::Mat& mat, size_t precision) {
-    Serial.printf("%s:\n", name);
+    Serial.printf(" \"%s\": [", name);
     for (int i = 0; i < mat.rows; ++i) {
         for (int j = 0; j < mat.cols; ++j) {
-            Serial.printf("%.*f ", precision, mat(i, j));
+            Serial.printf("%.*f", precision, mat(i, j));
+            if (!( j == mat.cols-1 && i == mat.rows-1 )) {
+                Serial.print(", ");
+            } else {
+                Serial.print(" ");
+            }
         }
-        Serial.println();
     }
+    Serial.printf("] ");
 }
 
 void KalmanFilter::_rotateVectorByQuat(const float* quat, const float* vec, float* result) {
@@ -139,6 +160,7 @@ void KalmanFilter::_initialise() {
     _printMat("Process noise covariance Q", _kf_state.Q);
     _printMat("Measurement noise covariance R", _kf_state.R);
     #endif
+    _kf_state.K = dspm::Mat::ones(3,6) * 0.0f;
 
     // Calculate the expanded process noise covariance Qd
     float dt = 1.0f / PREDICT_TASK_FREQUENCY_HZ;
@@ -281,11 +303,11 @@ void KalmanFilter::_predict(float dt) {
     // 3.2 Update P
     _kf_state.P = _kf_state.P + dt*(_kf_state.A*_kf_state.P + _kf_state.P*_kf_state.A.t() + _kf_state.Qd);
     
-    xSemaphoreGive(_mutex);
 
     // Print the updated state and covariance
     // _printMat("Updated state x", _kf_state.x);
     // Print the updated state as JSON
+    
     const size_t pres = 7;
     Serial.print("{\"state\": {\"x\": ");
     Serial.print(_kf_state.x(0, 0), pres);
@@ -319,7 +341,14 @@ void KalmanFilter::_predict(float dt) {
     Serial.print(_accel[2], pres);
     // Serial.print(", \"var\": ");
     // Serial.print(var, pres);
-    Serial.println("}}}");
+    //? dt times?
+    Serial.printf("}},");
+    _printMat("f", _kf_state.f, pres);
+    Serial.print(",");
+    _printMat("P", _kf_state.P, pres);
+    Serial.print("}\n");
+
+    xSemaphoreGive(_mutex);
 
 
     // LED overrun indicator
@@ -332,26 +361,112 @@ void KalmanFilter::_predict(float dt) {
 void KalmanFilter::_update(float dt) {
     // Serial.printf("Updating with dt = %fs\n", dt);
 
+    // Serial.print("{\"dx\": ");
+    // Serial.print(_of[0], 7);
+    // Serial.print(", \"dy\": ");
+    // Serial.print(_of[1], 7);
+    // Serial.println("}, ");
+
     // 1. Project OF delta to global 3D frame
     float y[3] = {_of[0], _of[1], 0};
     _rotateVectorByQuat(_quat, y, y);
 
-    xSemaphoreTake(_mutex, portMAX_DELAY);
-    /*
-    // 2. Compute the Kalman gain
-    _kf_state.K = _kf_state.P * _kf_state.C.t() * (_kf_state.C * _kf_state.P * _kf_state.C.t() + _kf_state.R).inv();
+    dspm::Mat y_mat(3, 1);
+    y_mat(0, 0) = y[0];
+    y_mat(1, 0) = y[1];
+    y_mat(2, 0) = y[2];
 
+    // Print y as JSON
+    /*
+    Serial.print("{\"y_\": {\"x\": ");
+    Serial.print(y[0], 7);
+    Serial.print(", \"y\": ");
+    Serial.print(y[1], 7);
+    Serial.print(", \"z\": ");
+    Serial.print(y[2], 7);
+    Serial.println("}}, ");
+    */
+
+    xSemaphoreTake(_mutex, portMAX_DELAY);
+    
+    // 2. Compute the Kalman gain
+    _kf_state.K = _kf_state.P * _kf_state.C.t() * (_kf_state.C * _kf_state.P * _kf_state.C.t() + _kf_state.R).pinv();
+    /*
+    // Print the Kalman gain matrix K as JSON
+    Serial.print("{\"K\": [");
+    for (int i = 0; i < _kf_state.K.rows; ++i) {
+        Serial.print("[");
+        for (int j = 0; j < _kf_state.K.cols; ++j) {
+            Serial.print(_kf_state.K(i, j), 7);
+            if (j < _kf_state.K.cols - 1) Serial.print(", ");
+        }
+        Serial.print("]");
+        if (i < _kf_state.K.rows - 1) Serial.print(", ");
+    }
+    Serial.println("]}, ");
+    */
+
+    // TODO: implement this with static variable to hold the previous state
     // 3. Update the current state estimate
     // 3.1 Calculate h
-    // _kf_state.h(0,0) = _kf_state.x[0] - ;
-    // _kf_state.h(1,0) = _kf_state.x[1] - ;
-    // _kf_state.h(2,0) = _kf_state.x[2] - ;
+    static float prev_x[3] = {0.0f, 0.0f, 0.0f};
+    _kf_state.h(0,0) = _kf_state.x(0,0) - prev_x[0];
+    _kf_state.h(1,0) = _kf_state.x(1,0) - prev_x[1];
+    _kf_state.h(2,0) = _kf_state.x(2,0) - prev_x[2];
+
     // 3.2 Update x
-    _kf_state.x = _kf_state.x + _kf_state.K * (y - _kf_state.h);
+    dspm::Mat inno = y_mat - _kf_state.h;
+    _kf_state.x = _kf_state.x + _kf_state.K * (inno);
 
     // 4. Update the error covariance matrix
     _kf_state.P = (dspm::Mat::eye(6) - _kf_state.K * _kf_state.C) * _kf_state.P;
-    */
+
+    // 5. Update last x state
+    prev_x[0] = _kf_state.x(0,0);
+    prev_x[1] = _kf_state.x(1,0);
+    prev_x[2] = _kf_state.x(2,0);
+
+    // Print data as JSON
+    const size_t pres = 7;
+    Serial.print("{\"state\": {\"x\": ");
+    Serial.print(_kf_state.x(0, 0), pres);
+    Serial.print(", \"y\": ");
+    Serial.print(_kf_state.x(1, 0), pres);
+    Serial.print(", \"z\": ");
+    Serial.print(_kf_state.x(2, 0), pres);
+    Serial.print(", \"vx\": ");
+    Serial.print(_kf_state.x(3, 0), pres);
+    Serial.print(", \"vy\": ");
+    Serial.print(_kf_state.x(4, 0), pres);
+    Serial.print(", \"vz\": ");
+    Serial.print(_kf_state.x(5, 0), pres);
+    Serial.print(", \"dt\": ");
+    Serial.print(dt, pres);
+    Serial.print("}, ");
+    Serial.print("\"sensor_input\": {");
+    Serial.print("\"quat\": {\"x\": ");
+    Serial.print(_quat[1], pres);
+    Serial.print(", \"y\": ");
+    Serial.print(_quat[2], pres);
+    Serial.print(", \"z\": ");
+    Serial.print(_quat[3], pres);
+    Serial.print(", \"w\": ");
+    Serial.print(_quat[0], pres);
+    Serial.print("}, \"of\": {\"x\": ");
+    Serial.print(y[0], pres);
+    Serial.print(", \"y\": ");
+    Serial.print(y[1], pres);
+    Serial.print(", \"z\": ");
+    Serial.print(y[2], pres);
+    //? dt times?
+    Serial.printf("}},");
+    _printMat("y-h", inno, pres);
+    Serial.print(",");
+    _printMat("K", _kf_state.K, pres);
+    Serial.print(",");
+    _printMat("P", _kf_state.P, pres);
+    Serial.print("}\n");
+    
     xSemaphoreGive(_mutex);
 
     // LED overrun indicator

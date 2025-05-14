@@ -346,6 +346,7 @@ void KalmanFilter::_predict(float dt) {
     _printMat("f", _kf_state.f, pres);
     Serial.print(",");
     _printMat("P", _kf_state.P, pres);
+    Serial.printf(", \"micros\": %lu ", micros());
     Serial.print("}\n");
 
     xSemaphoreGive(_mutex);
@@ -353,9 +354,9 @@ void KalmanFilter::_predict(float dt) {
 
     // LED overrun indicator
     // red if cycle is more than 10% off the target frequency
-    if (dt*0.9f > 1.0f/PREDICT_TASK_FREQUENCY_HZ) {
-        _led.setPixel(0, L_YELLOW, 1);
-    }
+    // if (dt*0.9f > 1.0f/PREDICT_TASK_FREQUENCY_HZ) {
+    //     _led.setPixel(0, L_YELLOW, 1);
+    // }
 }
 
 void KalmanFilter::_update(float dt) {
@@ -465,13 +466,14 @@ void KalmanFilter::_update(float dt) {
     _printMat("K", _kf_state.K, pres);
     Serial.print(",");
     _printMat("P", _kf_state.P, pres);
+    Serial.printf(", \"micros\": %lu ", micros());
     Serial.print("}\n");
     
     xSemaphoreGive(_mutex);
 
     // LED overrun indicator
     // red if cycle is more than 10% off the target frequency
-    if (dt*0.9f > 1.0f/UPDATE_TASK_FREQUENCY_HZ) {
-        _led.setPixel(0, L_YELLOW, 1);
-    }
+    // if (dt*0.9f > 1.0f/UPDATE_TASK_FREQUENCY_HZ) {
+    //     _led.setPixel(0, L_YELLOW, 1);
+    // }
 }

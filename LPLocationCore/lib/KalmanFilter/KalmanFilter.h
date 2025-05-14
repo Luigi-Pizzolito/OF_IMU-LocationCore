@@ -14,6 +14,7 @@
 #define ORION_ALPHA 0.5 //0.02
 
 #define IMU_VAR_THR 0.5
+// #define IMU_VAR_THR 0.1
 
 #define KAL_TASK_CORE 1
 #define KAL_TASK_PRIORITY 1
@@ -26,6 +27,40 @@
 #define KF_INIT_P 0.1f
 #define KF_INIT_Q 0.001f
 #define KF_INIT_R 0.01f
+
+// #define IMU_VAR_THR 0.10f
+// #define KF_INIT_P 0.2255923f
+// #define KF_INIT_Q 0.0004803f
+// #define KF_INIT_R 27.8762436f
+
+// #define IMU_VAR_THR 0.05f
+// #define KF_INIT_P 0.2029382f
+// #define KF_INIT_Q 0.0005760f
+// #define KF_INIT_R 25.0738049f
+
+// opt slow
+// #define IMU_VAR_THR 0.25f
+// #define KF_INIT_P 0.2255923f
+// #define KF_INIT_Q 0.0004803f
+// #define KF_INIT_R 27.8762436f
+
+// opt fast
+// #define IMU_VAR_THR 0.25f
+// #define KF_INIT_P 0.0415492f
+// #define KF_INIT_Q 0.7152761f
+// #define KF_INIT_R 2.4869432f
+
+// opt faster
+// #define IMU_VAR_THR 0.25f
+// #define KF_INIT_P 0.0663339f
+// #define KF_INIT_Q 0.6855177f
+// #define KF_INIT_R 2.1589546f
+
+// opt fastest
+// #define IMU_VAR_THR 0.25f
+// #define KF_INIT_P 0.1016924f
+// #define KF_INIT_Q 0.6860596f
+// #define KF_INIT_R 1.8777355f
 
 
 #include <LiteLED.h>

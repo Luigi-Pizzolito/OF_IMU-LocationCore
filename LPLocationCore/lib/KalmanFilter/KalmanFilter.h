@@ -14,6 +14,7 @@
 #define ORION_ALPHA 0.5 //0.02
 
 #define IMU_VAR_THR 0.5
+
 // #define IMU_VAR_THR 0.1
 
 #define KAL_TASK_CORE 1
